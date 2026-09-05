@@ -1,0 +1,2 @@
+"""AIAG PPAP validation assets."""
+

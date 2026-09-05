@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmorX.ai · PPAP Flow</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-text">
+          <strong>SmorX.ai</strong>
+          <span>PPAP Flow</span>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Primary">
+        <button class="nav-button active" type="button" data-view="dashboard">Dashboard</button>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" data-group="submissions">Submissions</button>
+          <div class="nav-sub" data-group-panel="submissions">
+            <button class="nav-button" type="button" data-view="submissions" data-filter="all">All Submissions</button>
+            <button class="nav-button" type="button" data-view="submissions" data-filter="draft">Draft</button>
+            <button class="nav-button" type="button" data-view="submissions" data-filter="in_review">In Review</button>
+            <button class="nav-button" type="button" data-view="submissions" data-filter="failed">Failed</button>
+            <button class="nav-button" type="button" data-view="submissions" data-filter="approved">Approved</button>
+            <button class="nav-button" type="button" data-view="submissions" data-filter="submitted">Submitted</button>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" data-group="workspace">PPAP Workspace</button>
+          <div class="nav-sub" data-group-panel="workspace">
+            <button class="nav-button" type="button" data-view="workspace" data-panel="details">Submission Details</button>
+            <button class="nav-button" type="button" data-view="workspace" data-panel="documents">Documents</button>
+            <button class="nav-button" type="button" data-view="workspace" data-panel="validation">Validation</button>
+            <button class="nav-button" type="button" data-view="workspace" data-panel="issues">Issues / NCR</button>
+            <button class="nav-button" type="button" data-view="workspace" data-panel="approval">Approval</button>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" data-group="reports">Reports</button>
+          <div class="nav-sub" data-group-panel="reports">
+            <button class="nav-button" type="button" data-view="report">Validation Report</button>
+            <button class="nav-button nav-disabled" type="button" disabled title="Phase 3">PPAP Package</button>
+            <button class="nav-button nav-disabled" type="button" disabled title="Phase 3">Analytics</button>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" data-group="rules">Rules &amp; Standards</button>
+          <div class="nav-sub" data-group-panel="rules">
+            <button class="nav-button" type="button" data-view="rules" data-standard="aiag_ppap">AIAG PPAP</button>
+            <button class="nav-button" type="button" data-view="rules" data-standard="vda_ppf">VDA</button>
+            <button class="nav-button nav-disabled" type="button" disabled title="Coming soon">Customer Rules</button>
+            <button class="nav-button nav-disabled" type="button" disabled title="Coming soon">Custom Rules</button>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-group-toggle" type="button" data-group="admin">Administration</button>
+          <div class="nav-sub" data-group-panel="admin">
+            <button class="nav-button nav-disabled" type="button" disabled title="Phase 3">Users</button>
+            <button class="nav-button nav-disabled" type="button" disabled title="Phase 3">Roles</button>
+            <button class="nav-button nav-disabled" type="button" disabled title="Phase 3">Settings</button>
+          </div>
+        </div>
+      </nav>
+    </aside>
+
+    <section class="workspace">
+      <section id="dashboard-view" class="view">
+        <div class="view-header">
+          <div>
+            <p class="eyebrow">PPAP Dashboard</p>
+            <h1 id="dashboard-greeting">Good morning, Quality Team</h1>
+            <p class="subhead">Create PPAP, collect evidence, validate, resolve issues, and track readiness.</p>
+          </div>
+          <button id="new-submission" type="button">Create New PPAP</button>
+        </div>
+        <div id="kpi-grid" class="kpi-grid"></div>
+        <div class="dashboard-grid">
+          <section class="panel">
+            <div class="section-heading">
+              <div>
+                <h2>Recent Submissions</h2>
+                <p>Open a submission to continue the PPAP workspace.</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>PPAP ID</th>
+                    <th>Customer</th>
+                    <th>Level</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-body"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="section-heading">
+              <div>
+                <h2>Validation Health</h2>
+                <p>Aggregate package readiness across recent validations.</p>
+              </div>
+            </div>
+            <div id="health-bars" class="health-bars"></div>
+            <div id="health-stats" class="health-stats"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="submissions-view" class="view" hidden>
+        <div class="view-header">
+          <div>
+            <h1>Submissions</h1>
+            <p class="subhead" id="submissions-subhead">All PPAP packages in the control center.</p>
+          </div>
+          <button id="new-submission-list" type="button">Create New PPAP</button>
+        </div>
+        <section class="panel">
+          <div class="toolbar">
+            <input id="submission-search" type="search" placeholder="Search PPAP ID, customer, part...">
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>PPAP ID</th>
+                  <th>Customer</th>
+                  <th>Part</th>
+                  <th>Level</th>
+                  <th>Standard</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="submissions-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="create-view" class="view" hidden>
+        <div class="view-header">
+          <div>
+            <p class="breadcrumb">Home &gt; Submissions &gt; Create</p>
+            <h1>Create New PPAP</h1>
+            <p class="subhead">Capture submission metadata before uploading evidence.</p>
+          </div>
+        </div>
+        <section class="panel">
+          <form id="create-form" class="create-grid">
+            <div class="field"><label for="customer-name">Customer *</label><input id="customer-name" required></div>
+            <div class="field"><label for="part-number">Part Number *</label><input id="part-number" required></div>
+            <div class="field"><label for="part-name">Part Name *</label><input id="part-name" required></div>
+            <div class="field"><label for="part-revision">Part Revision *</label><input id="part-revision" required></div>
+            <div class="field"><label for="supplier-name">Supplier *</label><input id="supplier-name" required></div>
+            <div class="field"><label for="program-name">Program / Project</label><input id="program-name"></div>
+            <div class="field"><label for="submission-date">Submission Date</label><input id="submission-date" type="date"></div>
+            <div class="field"><label for="due-date">Requested Due Date</label><input id="due-date" type="date"></div>
+            <div class="field">
+              <label for="create-standard">Standard</label>
+              <select id="create-standard" required>
+                <option value="aiag_ppap" selected>AIAG PPAP</option>
+                <option value="vda_ppf">VDA 2 PPF/PPA</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="create-level">Submission Level</label>
+              <select id="create-level" required>
+                <option value="1">Level 1 - PSW only</option>
+                <option value="2">Level 2 - PSW with samples and limited data</option>
+                <option value="3" selected>Level 3 - PSW with samples and complete data</option>
+                <option value="4">Level 4 - Customer-defined requirements</option>
+                <option value="5">Level 5 - Complete data available at supplier site</option>
+              </select>
+            </div>
+            <div class="form-actions">
+              <button type="submit">Create Submission</button>
+              <button id="cancel-create" class="button-secondary" type="button">Cancel</button>
+            </div>
+            <div id="create-status" class="form-status" aria-live="polite"></div>
+          </form>
+        </section>
+      </section>
+
+      <section id="workspace-view" class="view" hidden>
+        <div class="view-header">
+          <div>
+            <p class="breadcrumb" id="workspace-breadcrumb">Home &gt; Submissions</p>
+            <h1 id="workspace-title">PPAP Workspace</h1>
+            <p class="subhead" id="workspace-meta"></p>
+          </div>
+          <span id="workspace-status" class="status-badge">DRAFT</span>
+        </div>
+
+        <div class="process-steps" id="process-steps" aria-label="PPAP workflow">
+          <div class="process-step" data-step="setup"><span class="step-index">1</span><div><strong>Setup</strong><small>Create submission</small></div></div>
+          <div class="process-step" data-step="upload"><span class="step-index">2</span><div><strong>Upload</strong><small>Collect evidence</small></div></div>
+          <div class="process-step" data-step="map"><span class="step-index">3</span><div><strong>Map Documents</strong><small>Classify artifacts</small></div></div>
+          <div class="process-step" data-step="validate"><span class="step-index">4</span><div><strong>Validate</strong><small>Run checkpoints</small></div></div>
+          <div class="process-step" data-step="resolve"><span class="step-index">5</span><div><strong>Resolve Issues</strong><small>Track findings</small></div></div>
+          <div class="process-step" data-step="approval"><span class="step-index">6</span><div><strong>Approval</strong><small>Status gate</small></div></div>
+          <div class="process-step" data-step="report"><span class="step-index">7</span><div><strong>Final Report</strong><small>Package readiness</small></div></div>
+          <div class="process-step" data-step="submission"><span class="step-index">8</span><div><strong>Submission</strong><small>Track outcome</small></div></div>
+        </div>
+
+        <div class="workspace-tabs">
+          <button class="tab-button active" type="button" data-panel="details">Details</button>
+          <button class="tab-button" type="button" data-panel="documents">Documents</button>
+          <button class="tab-button" type="button" data-panel="validation">Validation</button>
+          <button class="tab-button" type="button" data-panel="issues">Issues</button>
+          <button class="tab-button" type="button" data-panel="approval">Approval</button>
+        </div>
+
+        <section id="panel-details" class="panel workspace-panel">
+          <form id="upload-form">
+            <input type="hidden" id="case-id">
+            <div class="field-row">
+              <div class="field">
+                <label for="standard-id">Standard</label>
+                <select id="standard-id" name="standard_id" required>
+                  <option value="aiag_ppap">AIAG PPAP</option>
+                  <option value="vda_ppf">VDA 2 PPF/PPA</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="submission-level">Submission level / scope</label>
+                <select id="submission-level" name="submission_level" required>
+                  <option value="1">Level 1 - PSW only</option>
+                  <option value="2">Level 2 - PSW with samples and limited data</option>
+                  <option value="3" selected>Level 3 - PSW with samples and complete data</option>
+                  <option value="4">Level 4 - Customer-defined requirements</option>
+                  <option value="5">Level 5 - Complete data available at supplier site</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="files">Upload ZIP or loose files</label>
+              <input id="files" name="files" type="file" multiple>
+            </div>
+            <button id="submit" type="submit">Review files</button>
+          </form>
+          <div id="status" aria-live="polite"></div>
+          <div id="submission-notice" class="notice" hidden></div>
+
+          <section id="review" class="section-panel" hidden>
+            <div class="section-heading">
+              <div>
+                <h2>Confirm upload</h2>
+                <p>Review the selected files before extraction and element tagging starts.</p>
+              </div>
+              <span id="selected-file-count" class="tag"></span>
+            </div>
+            <div class="actions">
+              <button id="confirm-processing" type="button">Confirm processing</button>
+              <button id="change-files" class="button-secondary" type="button">Change files</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>File</th>
+                    <th>Container</th>
+                    <th>Size</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="review-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="result" class="section-panel" hidden>
+            <div class="section-heading">
+              <div>
+                <h2>Package ready</h2>
+                <p>Extraction and element tagging are complete. Start validation when ready.</p>
+              </div>
+            </div>
+            <div class="summary" id="summary"></div>
+            <div class="actions">
+              <button id="validate" type="button" hidden>Validate</button>
+            </div>
+          </section>
+        </section>
+
+        <section id="panel-documents" class="panel workspace-panel" hidden>
+          <div class="section-heading">
+            <div>
+              <h2>PPAP Document Matrix</h2>
+              <p>Required elements mapped to uploaded and tagged documents.</p>
+            </div>
+            <button id="refresh-matrix" class="button-secondary" type="button">Refresh</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>PPAP Element</th>
+                  <th>Required</th>
+                  <th>Document</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="matrix-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="panel-validation" class="panel workspace-panel" hidden>
+          <div class="section-heading">
+            <div>
+              <h2>Validation Results</h2>
+              <p>Filter by severity, then review AI decisions before generating the report.</p>
+            </div>
+            <button id="generate-report" type="button">Generate Report</button>
+          </div>
+          <div id="severity-cards" class="severity-cards"></div>
+          <div id="review-overview" class="summary"></div>
+          <div id="review-elements" class="element-accordion"></div>
+        </section>
+
+        <section id="panel-issues" class="panel workspace-panel" hidden>
+          <div class="section-heading">
+            <div>
+              <h2>Issues / NCR</h2>
+              <p>Critical and major findings that need resolution before approval.</p>
+            </div>
+          </div>
+          <div id="issues-list" class="issues-list"></div>
+        </section>
+
+        <section id="panel-approval" class="panel workspace-panel" hidden>
+          <div class="section-heading">
+            <div>
+              <h2>Approval</h2>
+              <p>Phase 1 tracks approval status only. Full workflow arrives in Phase 3.</p>
+            </div>
+          </div>
+          <div class="approval-card">
+            <p>Current status: <strong id="approval-status">draft</strong></p>
+            <div class="actions">
+              <button id="mark-approved" type="button">Mark Approved</button>
+              <button id="mark-submitted" class="button-secondary" type="button">Mark Submitted</button>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="report-view" class="view" hidden>
+        <div class="view-header">
+          <div>
+            <h1>Validation Report</h1>
+            <p class="subhead">Final package status, findings, and artifact-level evidence.</p>
+          </div>
+        </div>
+        <section id="report-result" class="report-sheet" hidden>
+          <div class="report-title-band">
+            <div>
+              <span id="report-kicker" class="report-kicker">Production Part Approval Process</span>
+              <h2 id="report-title">Validation Report</h2>
+              <p id="report-description">Final package status, global findings, and artifact-level evidence.</p>
+            </div>
+            <div class="report-actions">
+              <a id="report-pdf" class="link-button" href="#" download>Download PDF</a>
+              <a id="report-csv" class="link-button link-secondary" href="#" download>Export CSV</a>
+            </div>
+          </div>
+          <div id="report-readiness" class="readiness-band"></div>
+          <div class="summary" id="report-summary"></div>
+          <h3 class="report-section-title">Package Information</h3>
+          <div id="report-key-fields" class="key-field-grid"></div>
+          <div class="report-global-grid">
+            <section>
+              <h3 class="report-section-title">Global Findings</h3>
+              <div class="report-narrative" id="report-narrative"></div>
+            </section>
+            <section>
+              <h3 class="report-section-title">Status Distribution</h3>
+              <div id="report-global-chart"></div>
+            </section>
+          </div>
+          <h3 class="report-section-title">Priority Findings</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Priority</th>
+                  <th>Artifact</th>
+                  <th>Rule</th>
+                  <th>Status</th>
+                  <th>Issue</th>
+                  <th>Recommended Action</th>
+                </tr>
+              </thead>
+              <tbody id="report-issues-body"></tbody>
+            </table>
+          </div>
+          <h3 class="report-section-title report-elements-heading">Artifact Reports</h3>
+          <div id="report-elements" class="element-accordion"></div>
+        </section>
+        <section id="report-empty" class="panel">
+          <p>Open a submission and generate a report to view readiness here.</p>
+        </section>
+      </section>
+
+      <section id="rules-view" class="view" hidden>
+        <div class="view-header">
+          <div>
+            <h1>Rule Library</h1>
+            <p class="subhead" id="rules-count">Loading rules...</p>
+          </div>
+          <button id="add-rule" type="button">Add Rule</button>
+        </div>
+        <div id="rule-tabs" class="rule-chips"></div>
+        <section class="panel">
+          <div class="rule-meta" id="rule-meta"></div>
+          <h2 id="rule-title"></h2>
+          <p id="rule-applicability"></p>
+        </section>
+        <section id="rule-list" class="rule-grid"></section>
+        <section id="rule-editor" class="panel rule-editor" hidden>
+          <div class="section-heading">
+            <div>
+              <h2 id="rule-editor-title">Add Rule</h2>
+              <p>Write a clear validation instruction and select any referenced artifacts.</p>
+            </div>
+          </div>
+          <form id="rule-form" class="rule-form">
+            <input id="rule-key" type="hidden">
+            <div class="field rule-description-field">
+              <label for="rule-description">Rule instruction</label>
+              <textarea id="rule-description" rows="5" required minlength="12" maxlength="2000"></textarea>
+            </div>
+            <fieldset class="reference-fieldset">
+              <legend>Referenced artifacts</legend>
+              <div id="rule-references" class="reference-grid"></div>
+            </fieldset>
+            <label class="toggle-row" for="rule-enabled">
+              <input id="rule-enabled" type="checkbox" checked>
+              <span>Enabled for future validations</span>
+            </label>
+            <div id="rule-form-status" class="form-status" aria-live="polite"></div>
+            <div class="actions">
+              <button id="save-rule" type="submit">Save Rule</button>
+              <button id="cancel-rule" class="button-secondary" type="button">Cancel</button>
+            </div>
+          </form>
+        </section>
+      </section>
+    </section>
+  </main>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

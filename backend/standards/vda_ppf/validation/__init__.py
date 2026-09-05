@@ -1,0 +1,2 @@
+"""VDA validation scaffold."""
+

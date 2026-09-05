@@ -1,0 +1,282 @@
+{
+  "Design Record": {
+    "element_number": 1,
+    "mandatory": true,
+    "aliases": [
+      "design record",
+      "drawing",
+      "part drawing",
+      "engineering drawing",
+      "customer drawing",
+      "technical drawing",
+      "zeichnung"
+    ],
+    "supported_extensions": [".pdf", ".docx", ".xlsx"],
+    "description": "Released product definition used as the reference for VDA PPF/PPA sampling."
+  },
+  "Engineering Change Documentation": {
+    "element_number": 2,
+    "mandatory": false,
+    "aliases": [
+      "engineering change",
+      "technical change",
+      "change notice",
+      "ecn",
+      "eco",
+      "ecr",
+      "aenderung",
+      "change documentation"
+    ],
+    "supported_extensions": [".pdf", ".docx", ".xlsx"],
+    "description": "Authorized technical change records applicable to the submitted product/process."
+  },
+  "Customer Technical Approval": {
+    "element_number": 3,
+    "mandatory": false,
+    "aliases": [
+      "customer technical approval",
+      "customer engineering approval",
+      "technical approval",
+      "deviation approval",
+      "sonderfreigabe",
+      "customer release"
+    ],
+    "supported_extensions": [".pdf", ".docx", ".xlsx"],
+    "description": "Customer technical approval, deviation, or pre-release evidence where required."
+  },
+  "Design FMEA": {
+    "element_number": 4,
+    "mandatory": false,
+    "aliases": [
+      "dfmea",
+      "design fmea",
+      "design risk analysis",
+      "konstruktions fmea",
+      "d-fmea"
+    ],
+    "supported_extensions": [".xlsx", ".xls", ".pdf", ".docx"],
+    "description": "Design risk analysis when the supplier owns or contributes to product design."
+  },
+  "Process Flow Diagram": {
+    "element_number": 5,
+    "mandatory": true,
+    "aliases": [
+      "process flow",
+      "process flow diagram",
+      "process sequence",
+      "process flow chart",
+      "ablaufplan",
+      "prozessablaufplan",
+      "pfd"
+    ],
+    "supported_extensions": [".pdf", ".pptx", ".xlsx", ".docx"],
+    "description": "Sequence of production, inspection, rework, handling, and material flow steps."
+  },
+  "Process FMEA": {
+    "element_number": 6,
+    "mandatory": true,
+    "aliases": [
+      "pfmea",
+      "process fmea",
+      "process risk analysis",
+      "prozess fmea",
+      "p-fmea"
+    ],
+    "supported_extensions": [".xlsx", ".xls", ".pdf"],
+    "description": "Process risk analysis linked to the manufacturing and inspection sequence."
+  },
+  "Control Plan": {
+    "element_number": 7,
+    "mandatory": true,
+    "aliases": [
+      "control plan",
+      "production control plan",
+      "inspection plan",
+      "pruefplan",
+      "lenkungsplan",
+      "controlplan"
+    ],
+    "supported_extensions": [".xlsx", ".xls", ".pdf", ".docx"],
+    "description": "Planned product and process controls for serial production."
+  },
+  "Measurement System Analysis": {
+    "element_number": 8,
+    "mandatory": true,
+    "aliases": [
+      "measurement system analysis",
+      "msa",
+      "gage r&r",
+      "gauge r&r",
+      "messsystemanalyse",
+      "messmittelfaehigkeit",
+      "calibration study"
+    ],
+    "supported_extensions": [".xlsx", ".xls", ".pdf"],
+    "description": "Evidence that measurement systems used for reported characteristics are suitable."
+  },
+  "Dimensional Results": {
+    "element_number": 9,
+    "mandatory": true,
+    "aliases": [
+      "dimensional results",
+      "measurement report",
+      "dimension report",
+      "inspection report",
+      "massbericht",
+      "dimensionsergebnis",
+      "balloon report"
+    ],
+    "supported_extensions": [".xlsx", ".xls", ".pdf"],
+    "description": "Measured product characteristics compared against drawing/specification requirements."
+  },
+  "Material and Functional Test Results": {
+    "element_number": 10,
+    "mandatory": true,
+    "aliases": [
+      "material test",
+      "functional test",
+      "performance test",
+      "test report",
+      "material certificate",
+      "werkstoffpruefung",
+      "funktionspruefung"
+    ],
+    "supported_extensions": [".pdf", ".xlsx", ".xls", ".docx"],
+    "description": "Material, functional, performance, durability, and specification test evidence."
+  },
+  "Initial Sample Inspection Report": {
+    "element_number": 11,
+    "mandatory": true,
+    "aliases": [
+      "initial sample inspection report",
+      "isir",
+      "initial sample report",
+      "first article inspection",
+      "empb",
+      "erstmusterpruefbericht",
+      "erstmusterbericht"
+    ],
+    "supported_extensions": [".pdf", ".xlsx", ".xls", ".docx"],
+    "description": "Initial sample inspection summary connecting sampled parts, measured results, and disposition."
+  },
+  "Initial Process Capability": {
+    "element_number": 12,
+    "mandatory": true,
+    "aliases": [
+      "initial process capability",
+      "short term capability",
+      "process capability",
+      "capability study",
+      "cpk",
+      "ppk",
+      "kurzzeitfaehigkeit",
+      "prozessfaehigkeit"
+    ],
+    "supported_extensions": [".xlsx", ".xls", ".pdf"],
+    "description": "Short-term capability or stability evidence for important product/process characteristics."
+  },
+  "Qualified Laboratory Documentation": {
+    "element_number": 13,
+    "mandatory": true,
+    "aliases": [
+      "laboratory documentation",
+      "qualified laboratory",
+      "lab accreditation",
+      "laboratory certificate",
+      "laborqualifikation",
+      "iso 17025",
+      "accredited laboratory"
+    ],
+    "supported_extensions": [".pdf", ".docx", ".xlsx"],
+    "description": "Qualification/accreditation evidence for laboratories producing test results."
+  },
+  "Appearance Approval": {
+    "element_number": 14,
+    "mandatory": false,
+    "aliases": [
+      "appearance approval",
+      "appearance report",
+      "aai",
+      "surface approval",
+      "color approval",
+      "oberflaechenfreigabe",
+      "appearance inspection"
+    ],
+    "supported_extensions": [".pdf", ".docx", ".xlsx"],
+    "description": "Customer/supplier appearance approval for visible or appearance-controlled parts."
+  },
+  "Sample Production Parts": {
+    "element_number": 15,
+    "mandatory": true,
+    "aliases": [
+      "sample production parts",
+      "initial samples",
+      "sample parts",
+      "production samples",
+      "musterteile",
+      "erstmusterteile",
+      "serial sample"
+    ],
+    "supported_extensions": [".pdf", ".docx", ".jpg", ".jpeg", ".png", ".xlsx"],
+    "description": "Physical initial samples or documented sample parts from the intended production process."
+  },
+  "Reference Sample": {
+    "element_number": 16,
+    "mandatory": false,
+    "aliases": [
+      "reference sample",
+      "master sample",
+      "retained sample",
+      "reference part",
+      "referenzmuster",
+      "grenzmuster"
+    ],
+    "supported_extensions": [".pdf", ".docx", ".jpg", ".jpeg", ".png", ".xlsx"],
+    "description": "Retained reference/master sample record for future comparison or subjective checks."
+  },
+  "Checking Aids": {
+    "element_number": 17,
+    "mandatory": false,
+    "aliases": [
+      "checking aids",
+      "special gauge",
+      "fixture",
+      "checking fixture",
+      "pruefmittel",
+      "lehre",
+      "gage"
+    ],
+    "supported_extensions": [".pdf", ".docx", ".xlsx", ".jpg", ".jpeg", ".png"],
+    "description": "Special gauges, fixtures, and checking aids used for inspection or release."
+  },
+  "Customer Specific Requirements": {
+    "element_number": 18,
+    "mandatory": true,
+    "aliases": [
+      "customer specific requirements",
+      "csr",
+      "customer requirement",
+      "vda customer scope",
+      "kundenspezifische anforderungen",
+      "bemusterungsumfang",
+      "scope agreement"
+    ],
+    "supported_extensions": [".pdf", ".docx", ".xlsx", ".txt"],
+    "description": "Customer-specific scope, thresholds, forms, submission content, and approval requirements."
+  },
+  "PPF Submission Warrant": {
+    "element_number": 19,
+    "mandatory": true,
+    "aliases": [
+      "ppf submission warrant",
+      "part submission warrant",
+      "psw",
+      "teilevorlagebestaetigung",
+      "submission cover sheet",
+      "ppa warrant",
+      "ppf cover sheet"
+    ],
+    "supported_extensions": [".pdf", ".docx", ".xlsx"],
+    "description": "PPF/PPA cover document summarizing the submission, scope, results, and requested disposition."
+  }
+}

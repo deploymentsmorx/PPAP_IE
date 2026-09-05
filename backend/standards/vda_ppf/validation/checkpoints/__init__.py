@@ -1,0 +1,2 @@
+"""VDA checkpoint catalog scaffold."""
+

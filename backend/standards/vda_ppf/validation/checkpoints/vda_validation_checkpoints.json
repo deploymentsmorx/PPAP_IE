@@ -1,0 +1,1630 @@
+{
+  "schema_version": "1.0",
+  "standard_id": "vda_ppf",
+  "standard_name": "VDA 2 PPF/PPA",
+  "file_purpose": "Prompt-ready VDA PPF/PPA validation rules written in original project language from public process knowledge, not copied from the copyrighted VDA Band 2 text.",
+  "source_note": [
+    "VDA Band 2 detailed requirements are copyrighted and must be licensed for production-grade compliance use.",
+    "This catalog provides an evidence-bound VDA-oriented starting point using publicly described PPF/PPA artifacts and common automotive approval controls."
+  ],
+  "how_to_use": [
+    "Select the VDA submission artifact to validate.",
+    "Attach that artifact's evidence and evidence for related artifact checks.",
+    "Render the selected artifact rules compactly for the validation model.",
+    "The model must return one checkpoint result for every supplied rule_id."
+  ],
+  "global_prompt_contract": {
+    "system_message": "You are a VDA PPF/PPA validation agent. You validate one VDA submission artifact at a time. You must follow every supplied rule exactly, cite evidence, and return strict JSON only.",
+    "allowed_verdicts": {
+      "PASS": "Evidence clearly satisfies the rule.",
+      "FLAG": "Evidence is present but nonconforming, incomplete, stale, inconsistent, or conflicts with another artifact.",
+      "NOT_FOUND": "Required evidence, a required field, or a required linked artifact is absent."
+    },
+    "hard_rules": [
+      "Do not bypass, merge, soften, or summarize any supplied rule.",
+      "Do not guess values that are not printed in evidence.",
+      "Do not use general VDA knowledge to fill missing evidence.",
+      "Do not mark missing evidence as PASS.",
+      "Do not confuse NOT_FOUND with FLAG.",
+      "For a cross-artifact rule, compare exact identifiers, revisions, dates, characteristics, sample counts, specifications, tolerances, limits, and result values when evidence contains them.",
+      "For a cross-artifact rule, return NOT_FOUND when the referenced artifact is required but absent.",
+      "For a cross-artifact rule, return PASS only when the compared details match or the rule explicitly allows the referenced artifact to be absent.",
+      "Do not output Approved or Rejected.",
+      "Do not skip any supplied rule_id.",
+      "Return strict JSON only."
+    ],
+    "required_output_schema": {
+      "element_number": "integer",
+      "element_name": "string",
+      "element_status": "PASS|REVIEW|NOT_FOUND|N/A",
+      "checkpoint_results": [
+        {
+          "rule_id": "simple per-artifact rule number",
+          "status": "PASS|FLAG|NOT_FOUND",
+          "confidence": "integer 0-100",
+          "evidence": [
+            {
+              "file_name": "string",
+              "unit_id": "string",
+              "quote": "short exact quote from supplied evidence"
+            }
+          ],
+          "reason": "short rule-specific explanation with exact value(s) when present",
+          "recommended_action": "what to fix when status is FLAG or NOT_FOUND; empty string otherwise"
+        }
+      ],
+      "element_summary": "short summary of biggest issues",
+      "missing_evidence": [
+        "list of missing required evidence"
+      ]
+    }
+  },
+  "counts": {
+    "elements": 19,
+    "rules": 152,
+    "watch_outs": 19
+  },
+  "elements": [
+    {
+      "element_number": 1,
+      "element_name": "Design Record",
+      "applicability_rule": "Required when the VDA PPF/PPA submission must prove conformity to a released product definition.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 01 - Design Record.",
+        "Apply every supplied rule. Do not skip or combine rules.",
+        "Use primary design-record evidence for artifact-specific checks.",
+        "Use related artifact evidence only when a rule names that related artifact.",
+        "Return strict JSON only."
+      ],
+      "watch_outs": [
+        "Do not accept a filename as proof of part number, revision, release status, or specification."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate a released design record, drawing, CAD-derived specification, or customer product specification for the submitted part. Verdict logic: PASS if the design record is present; NOT_FOUND if no design record evidence is supplied.",
+          "evidence_instruction": "Use only evidence chunks tagged to this artifact. Do not use the filename as the only evidence.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate the part number on the design record itself. Verdict logic: PASS with the printed part number; NOT_FOUND if no part number is printed in the evidence.",
+          "evidence_instruction": "Cite the exact part-number text from the design record.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate the design revision, issue level, or release index on the design record. Verdict logic: PASS with the printed revision; NOT_FOUND if no revision or release identifier is present.",
+          "evidence_instruction": "Cite the exact revision or release text.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Confirm the design record contains product characteristics, dimensions, tolerances, material, or specification references that can drive sampling and inspection. Verdict logic: PASS if at least one controlled requirement set is visible; FLAG if the document is present but insufficient to define what must be inspected; NOT_FOUND if no controlled requirements are visible.",
+          "evidence_instruction": "Cite one representative controlled requirement.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Check whether special, safety, regulatory, or customer-marked characteristics are identified when they appear on the design record. Verdict logic: PASS if markings are present or the evidence clearly shows none; FLAG if markings appear ambiguous or not carried consistently; NOT_FOUND if the relevant drawing area is missing.",
+          "evidence_instruction": "Cite the characteristic marking or the statement showing none are present.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare the part number and revision on the design record against the PPF Submission Warrant (19). Verdict logic: PASS if both match; FLAG if either value conflicts; NOT_FOUND if the warrant or comparable values are absent.",
+          "evidence_instruction": "Use related artifact 19 and cite the compared value from the primary or related evidence.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [19],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare listed characteristics on the design record against Dimensional Results (9) or the Initial Sample Inspection Report (11). Verdict logic: PASS if inspected characteristics can be traced; FLAG if required characteristics are missing or unmatched; NOT_FOUND if no measurement evidence is supplied.",
+          "evidence_instruction": "Use related artifacts 9 and 11 only for the traceability comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [9, 11],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare material or performance specifications on the design record against Material and Functional Test Results (10). Verdict logic: PASS if every visible required specification has supporting test or certificate evidence; FLAG if a required specification is unsupported or conflicting; NOT_FOUND if no test evidence is supplied.",
+          "evidence_instruction": "Use related artifact 10 for the comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [10],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 2,
+      "element_name": "Engineering Change Documentation",
+      "applicability_rule": "Required when the submitted part, drawing, process, material, tooling, source, or specification has an engineering or technical change relevant to PPF/PPA approval.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 02 - Engineering Change Documentation.",
+        "Do not assume a change exists when evidence does not show one.",
+        "If no change document is required by the submitted scope, rules may PASS only when evidence supports non-applicability."
+      ],
+      "watch_outs": [
+        "A changed revision on a drawing without an authorized change record is a consistency risk."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate an engineering change, technical change, deviation, change notice, or customer authorization applicable to the submitted part. Verdict logic: PASS if present; NOT_FOUND if the package references a change but no change evidence is supplied; PASS if evidence clearly shows no change applies.",
+          "evidence_instruction": "Cite the change document title, number, or explicit no-change statement.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate the change identifier, issue number, or authorization number. Verdict logic: PASS with the printed identifier; NOT_FOUND if a change document is present but no identifier is visible.",
+          "evidence_instruction": "Cite the exact change identifier.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate the change description or affected requirement. Verdict logic: PASS if the changed product/process/material/tooling/specification item is described; FLAG if the description is too vague to determine impact; NOT_FOUND if absent.",
+          "evidence_instruction": "Cite the affected item or change description.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate approval status, approver, approval date, or effective date for the change. Verdict logic: PASS if authorization timing is visible; FLAG if the change is pending, expired, or after the submitted sample build without explanation; NOT_FOUND if no approval timing is shown.",
+          "evidence_instruction": "Cite the approval status/date or effective date.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare the changed revision or affected requirement against the Design Record (1). Verdict logic: PASS if the design record reflects the authorized change; FLAG if the design record and change record conflict; NOT_FOUND if comparable values are absent.",
+          "evidence_instruction": "Use related artifact 1 for revision/requirement comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [1],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm affected inspection or test evidence reflects the change. Compare against Dimensional Results (9), Material and Functional Test Results (10), and ISIR (11). Verdict logic: PASS if the changed requirement is included in relevant results; FLAG if relevant evidence still reflects the old requirement; NOT_FOUND if the needed results are absent.",
+          "evidence_instruction": "Use related artifacts 9, 10, and 11 only as needed.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [9, 10, 11],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm process-related changes are reflected in Process Flow (5), Process FMEA (6), and Control Plan (7). Verdict logic: PASS if affected operations/controls are updated; FLAG if any related process artifact conflicts or omits the change; NOT_FOUND if required process artifacts are absent.",
+          "evidence_instruction": "Use related artifacts 5, 6, and 7 for process impact comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [5, 6, 7],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare change identifiers or revision levels against the PPF Submission Warrant (19). Verdict logic: PASS if the warrant reflects the same change/revision; FLAG if the warrant references a different change state; NOT_FOUND if comparable warrant evidence is absent.",
+          "evidence_instruction": "Use related artifact 19 for warrant comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [19],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 3,
+      "element_name": "Customer Technical Approval",
+      "applicability_rule": "Required when the customer requires technical approval, trial approval, deviation approval, customer release, or special release before or with PPF/PPA submission.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 03 - Customer Technical Approval.",
+        "Do not treat supplier self-approval as customer technical approval.",
+        "When the artifact is not applicable, require evidence supporting that non-applicability."
+      ],
+      "watch_outs": [
+        "Temporary approvals or deviations must not be treated as unrestricted serial release."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate customer technical approval, trial approval, deviation approval, special release, or an explicit statement that customer technical approval is not required. Verdict logic: PASS if appropriate evidence is present; NOT_FOUND if required approval evidence is absent.",
+          "evidence_instruction": "Cite the customer approval title or non-applicability statement.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate the customer approval identifier, deviation number, or release reference. Verdict logic: PASS with the printed identifier; NOT_FOUND if approval evidence has no identifier.",
+          "evidence_instruction": "Cite the exact approval identifier.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate approval status and approval date or validity period. Verdict logic: PASS if current and clear; FLAG if expired, conditional, or pending; NOT_FOUND if no status/date/validity is visible.",
+          "evidence_instruction": "Cite status and timing evidence.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Identify conditions, limitations, quantity limits, expiry dates, or actions attached to the approval. Verdict logic: PASS if no restrictions are stated or restrictions are clearly captured; FLAG if restrictions are present but unresolved; NOT_FOUND if the approval text is incomplete.",
+          "evidence_instruction": "Cite the condition text or explicit unrestricted statement.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare approved part number/revision against Design Record (1) and PPF Submission Warrant (19). Verdict logic: PASS if identifiers match; FLAG if they conflict; NOT_FOUND if comparable values are absent.",
+          "evidence_instruction": "Use related artifacts 1 and 19 for comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [1, 19],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: If approval is conditional or deviation-based, confirm related inspection/test evidence addresses the condition. Compare against Dimensional Results (9), Test Results (10), or ISIR (11). Verdict logic: PASS if condition evidence is addressed; FLAG if condition evidence is missing or contradictory; NOT_FOUND if related evidence is absent.",
+          "evidence_instruction": "Use related artifacts 9, 10, and 11 only for stated approval conditions.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [9, 10, 11],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm customer approval requirements from Customer Specific Requirements (18) are satisfied. Verdict logic: PASS if required customer approval evidence is present and consistent; FLAG if a customer-required approval is incomplete; NOT_FOUND if CSR evidence is absent where needed.",
+          "evidence_instruction": "Use related artifact 18 for required approval scope.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [18],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "judgment_or_semantic",
+          "agent_instruction": "Task: Assess whether the approval evidence is legible enough to support validation of customer, part, revision, status, and validity. Verdict logic: PASS if readable; FLAG if partially unreadable; NOT_FOUND if the approval evidence cannot be read.",
+          "evidence_instruction": "Cite a readable field or describe the unreadable region from evidence.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 4,
+      "element_name": "Design FMEA",
+      "applicability_rule": "Required when the supplier has design responsibility or customer scope requires design risk evidence.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 04 - Design FMEA.",
+        "Do not infer design risk controls from PFMEA or Control Plan.",
+        "If DFMEA is not applicable, require evidence showing design responsibility or customer scope."
+      ],
+      "watch_outs": [
+        "DFMEA may be legitimately unavailable to the supplier when the customer owns design; the package still needs evidence of that responsibility split."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate a DFMEA, design risk analysis, or documented statement that DFMEA is not applicable because the supplier does not own design responsibility. Verdict logic: PASS if valid evidence is present; NOT_FOUND if design risk evidence is required but absent.",
+          "evidence_instruction": "Cite the DFMEA title or non-applicability/design-responsibility statement.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate part number, revision, product family, or scope on the DFMEA. Verdict logic: PASS if the scope identifies the submitted product; FLAG if scope is ambiguous or mismatched; NOT_FOUND if scope is absent.",
+          "evidence_instruction": "Cite the DFMEA scope identifier.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Confirm the DFMEA includes failure modes, effects, causes, prevention controls, detection controls, and action tracking or risk priority/action priority fields. Verdict logic: PASS if these core columns/fields are present; FLAG if important columns are missing; NOT_FOUND if no usable DFMEA table is visible.",
+          "evidence_instruction": "Cite the header row or field list.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Check that high-risk or high-priority design items have actions, owners, target dates, or documented acceptance. Verdict logic: PASS if high-risk items are addressed; FLAG if actions/owners/dates are missing; NOT_FOUND if risk ranking/action evidence is absent.",
+          "evidence_instruction": "Cite one high-risk item or action record.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare DFMEA part/revision/scope against Design Record (1). Verdict logic: PASS if aligned; FLAG if product or revision scope conflicts; NOT_FOUND if comparable evidence is absent.",
+          "evidence_instruction": "Use related artifact 1 for comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [1],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm special or safety characteristics identified in DFMEA are carried into Process FMEA (6), Control Plan (7), and inspection evidence (9 or 11). Verdict logic: PASS if traceable; FLAG if a characteristic is missing downstream; NOT_FOUND if downstream artifacts are absent.",
+          "evidence_instruction": "Use related artifacts 6, 7, 9, and 11 for traceability.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [6, 7, 9, 11],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm design-related test requirements from DFMEA are reflected in Material and Functional Test Results (10). Verdict logic: PASS if tests cover identified design risks; FLAG if required tests are missing; NOT_FOUND if test evidence is absent.",
+          "evidence_instruction": "Use related artifact 10 for test coverage.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [10],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "judgment_or_semantic",
+          "agent_instruction": "Task: Assess whether the DFMEA evidence is legible and complete enough to validate risk rows and actions. Verdict logic: PASS if readable; FLAG if important rows/columns are cut off or unreadable; NOT_FOUND if DFMEA content cannot be read.",
+          "evidence_instruction": "Cite a readable row/field or identify the missing unreadable area.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 5,
+      "element_name": "Process Flow Diagram",
+      "applicability_rule": "Required for VDA PPF/PPA submissions that must demonstrate the intended serial production process.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 05 - Process Flow Diagram.",
+        "Use process flow evidence for sequence checks.",
+        "Do not infer process steps from file names or unrelated documents."
+      ],
+      "watch_outs": [
+        "The process flow is the backbone for PFMEA and Control Plan traceability."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate a process flow diagram, process sequence, routing, or process flow chart for the submitted product. Verdict logic: PASS if present; NOT_FOUND if absent.",
+          "evidence_instruction": "Cite the flow title or sequence header.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Confirm the flow identifies operation numbers, operation names, sequence arrows, or an ordered step list. Verdict logic: PASS if sequence is clear; FLAG if steps are present but order is unclear; NOT_FOUND if no sequence details are visible.",
+          "evidence_instruction": "Cite one operation number/name or sequence line.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Confirm the flow includes production, inspection, rework/repair when applicable, handling/storage, and packaging/shipping where visible in the process. Verdict logic: PASS if the flow covers the full serial path; FLAG if obvious required stages are missing; NOT_FOUND if content is too sparse to assess.",
+          "evidence_instruction": "Cite visible included or missing stages.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate product/process scope, part number, revision, plant, line, or process owner. Verdict logic: PASS if the flow can be tied to the submitted product/process; FLAG if scope is ambiguous; NOT_FOUND if no scope identifier is present.",
+          "evidence_instruction": "Cite the scope identifier.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare process-flow operations against Process FMEA (6). Verdict logic: PASS if operations are traceable; FLAG if PFMEA omits or adds unexplained operations; NOT_FOUND if PFMEA is absent.",
+          "evidence_instruction": "Use related artifact 6 for operation traceability.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [6],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare process-flow operations against Control Plan (7). Verdict logic: PASS if control-plan operations align with the flow; FLAG if controls are missing for process steps; NOT_FOUND if Control Plan is absent.",
+          "evidence_instruction": "Use related artifact 7 for control traceability.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [7],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare product/process scope against PPF Submission Warrant (19). Verdict logic: PASS if scope identifiers align; FLAG if part/process/revision conflicts; NOT_FOUND if comparable warrant evidence is absent.",
+          "evidence_instruction": "Use related artifact 19 for scope comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [19],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "judgment_or_semantic",
+          "agent_instruction": "Task: Assess whether the flow is legible and complete enough to support traceability. Verdict logic: PASS if readable; FLAG if parts of the flow are unreadable or truncated; NOT_FOUND if no readable flow is available.",
+          "evidence_instruction": "Cite a readable operation or describe missing/unreadable content.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 6,
+      "element_name": "Process FMEA",
+      "applicability_rule": "Required to show process risks and controls for the submitted serial production process.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 06 - Process FMEA.",
+        "Do not accept a Control Plan as a substitute for PFMEA.",
+        "Check traceability to process flow and controls."
+      ],
+      "watch_outs": [
+        "PFMEA must follow the process sequence and drive control plan content."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate a PFMEA or process risk analysis for the submitted part/process. Verdict logic: PASS if present; NOT_FOUND if absent.",
+          "evidence_instruction": "Cite the PFMEA title or header.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate product/process scope, part number, revision, process family, or plant/line identifier. Verdict logic: PASS if the PFMEA scope matches the submission; FLAG if scope is ambiguous or conflicting; NOT_FOUND if scope is absent.",
+          "evidence_instruction": "Cite the scope identifier.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Confirm PFMEA rows include process step/function, failure mode, failure effect, cause, prevention control, detection control, risk ranking or action priority, and action tracking. Verdict logic: PASS if core fields are visible; FLAG if important fields are missing; NOT_FOUND if no usable PFMEA rows are visible.",
+          "evidence_instruction": "Cite the header row or a representative row.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Check that high-risk/high-priority process items have actions, owners, due dates, status, or documented acceptance. Verdict logic: PASS if addressed; FLAG if action evidence is incomplete; NOT_FOUND if risk/action evidence is absent.",
+          "evidence_instruction": "Cite one high-risk action or missing action field.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare PFMEA process steps against Process Flow Diagram (5). Verdict logic: PASS if steps align; FLAG if PFMEA omits or adds unexplained steps; NOT_FOUND if flow evidence is absent.",
+          "evidence_instruction": "Use related artifact 5 for process step comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [5],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare PFMEA controls and characteristics against Control Plan (7). Verdict logic: PASS if prevention/detection controls and special characteristics are carried into controls; FLAG if controls are missing or inconsistent; NOT_FOUND if Control Plan is absent.",
+          "evidence_instruction": "Use related artifact 7 for control comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [7],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm PFMEA special or critical characteristics are represented in Dimensional Results (9), ISIR (11), or Initial Process Capability (12) where measurable. Verdict logic: PASS if traceable; FLAG if measurable critical characteristics lack evidence; NOT_FOUND if measurement/capability artifacts are absent.",
+          "evidence_instruction": "Use related artifacts 9, 11, and 12 for evidence coverage.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [9, 11, 12],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "judgment_or_semantic",
+          "agent_instruction": "Task: Assess whether PFMEA evidence is legible and complete enough to validate risk rows. Verdict logic: PASS if readable; FLAG if relevant rows or columns are unreadable; NOT_FOUND if PFMEA content cannot be read.",
+          "evidence_instruction": "Cite a readable row/header or identify unreadable content.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 7,
+      "element_name": "Control Plan",
+      "applicability_rule": "Required to define serial production controls for product and process characteristics.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 07 - Control Plan.",
+        "Do not accept generic inspection instructions unless tied to the submitted product/process.",
+        "Check linkage to process flow, PFMEA, measurement systems, and reaction plans."
+      ],
+      "watch_outs": [
+        "Control plans often look complete while missing reaction plans, frequencies, or gauge references."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate a control plan, production control plan, inspection plan, or equivalent control document for the submitted process. Verdict logic: PASS if present; NOT_FOUND if absent.",
+          "evidence_instruction": "Cite the control-plan title or header.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate part number, revision, product/process family, plant, line, or control-plan revision. Verdict logic: PASS if scope is clear; FLAG if scope conflicts or is ambiguous; NOT_FOUND if no scope identifier is visible.",
+          "evidence_instruction": "Cite the scope identifier.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Confirm the plan lists product/process characteristics, specifications/tolerances, control methods, gauges or equipment, sample size, frequency, responsibility, and reaction plan. Verdict logic: PASS if core fields are present; FLAG if important fields are missing; NOT_FOUND if no usable control table is visible.",
+          "evidence_instruction": "Cite the header row or representative control row.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Check that every listed special, safety, regulatory, or customer characteristic has an explicit control method and reaction plan. Verdict logic: PASS if all visible marked characteristics are controlled; FLAG if any marked characteristic lacks control/reaction evidence; NOT_FOUND if characteristic/control evidence is absent.",
+          "evidence_instruction": "Cite one marked characteristic and its control or missing control.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare control-plan operations against Process Flow Diagram (5). Verdict logic: PASS if controls align to process steps; FLAG if steps lack controls or controls do not trace to the flow; NOT_FOUND if flow evidence is absent.",
+          "evidence_instruction": "Use related artifact 5 for operation traceability.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [5],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare control-plan characteristics and controls against PFMEA (6). Verdict logic: PASS if PFMEA risks and controls are represented; FLAG if important PFMEA controls/characteristics are missing; NOT_FOUND if PFMEA evidence is absent.",
+          "evidence_instruction": "Use related artifact 6 for risk/control traceability.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [6],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm gauges or measurement systems named in the control plan have supporting Measurement System Analysis (8) or calibration evidence. Verdict logic: PASS if referenced systems are supported; FLAG if support is incomplete; NOT_FOUND if MSA/calibration evidence is absent.",
+          "evidence_instruction": "Use related artifact 8 for measurement-system support.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [8],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm controlled characteristics are represented in Dimensional Results (9), Test Results (10), ISIR (11), or Capability Studies (12) as applicable. Verdict logic: PASS if evidence covers the controlled characteristics; FLAG if required result evidence is missing; NOT_FOUND if related result evidence is absent.",
+          "evidence_instruction": "Use related artifacts 9, 10, 11, and 12 for evidence coverage.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [9, 10, 11, 12],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 8,
+      "element_name": "Measurement System Analysis",
+      "applicability_rule": "Required for measurement systems used to make reported product/process approval decisions.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 08 - Measurement System Analysis.",
+        "Do not mark a gauge acceptable unless acceptance evidence is printed.",
+        "Check linkage to reported characteristics and control-plan gauges."
+      ],
+      "watch_outs": [
+        "Calibration alone does not prove measurement-system suitability for the reported characteristic."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate MSA evidence, gauge R&R, bias, linearity, stability, capability, or documented measurement-system suitability evidence. Verdict logic: PASS if present; NOT_FOUND if no MSA/suitability evidence is supplied.",
+          "evidence_instruction": "Cite the MSA study title or method.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate gauge/equipment identifier, measurement method, characteristic, and part/process scope. Verdict logic: PASS if study scope is clear; FLAG if scope is ambiguous; NOT_FOUND if scope details are absent.",
+          "evidence_instruction": "Cite gauge id, method, or characteristic scope.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate study design details such as appraisers/operators, trials, parts, samples, date, and method. Verdict logic: PASS if study design is documented; FLAG if materially incomplete; NOT_FOUND if design details are absent.",
+          "evidence_instruction": "Cite the study design details.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate numeric results and acceptance decision or threshold. Verdict logic: PASS if result meets the stated threshold; FLAG if result fails, is conditional, or threshold is missing; NOT_FOUND if numeric result is absent.",
+          "evidence_instruction": "Cite the result and threshold/decision.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Confirm calibration status or equipment validity is current for the study or measurement period. Verdict logic: PASS if valid calibration/equipment status is visible; FLAG if expired or out of tolerance; NOT_FOUND if calibration/status evidence is absent.",
+          "evidence_instruction": "Cite calibration date/status or equipment validity.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare MSA equipment/characteristics against the Control Plan (7). Verdict logic: PASS if control-plan gauges or methods are supported by MSA evidence; FLAG if a referenced gauge lacks support; NOT_FOUND if control-plan or MSA comparable evidence is absent.",
+          "evidence_instruction": "Use related artifact 7 for gauge/characteristic comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [7],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm gauges used in Dimensional Results (9), ISIR (11), or Capability Studies (12) are covered by MSA where evidence identifies the gauge. Verdict logic: PASS if covered; FLAG if a named gauge is unsupported; NOT_FOUND if measurement evidence is absent.",
+          "evidence_instruction": "Use related artifacts 9, 11, and 12 for named gauges.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [9, 11, 12],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "judgment_or_semantic",
+          "agent_instruction": "Task: Assess whether the MSA evidence is legible and complete enough to validate method, scope, results, and decision. Verdict logic: PASS if readable; FLAG if result tables are partially unreadable; NOT_FOUND if no readable MSA content is available.",
+          "evidence_instruction": "Cite a readable result or identify unreadable content.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 9,
+      "element_name": "Dimensional Results",
+      "applicability_rule": "Required to prove product dimensions and measurable characteristics meet released requirements for submitted samples.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 09 - Dimensional Results.",
+        "Do not accept pass/fail summaries without traceable measured values when the rule asks for values.",
+        "Compare directly to design-record requirements."
+      ],
+      "watch_outs": [
+        "Every measured result must trace to a characteristic, specification, sample, and drawing/revision."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate dimensional results, measurement report, balloon report, or inspection report for the submitted samples. Verdict logic: PASS if present; NOT_FOUND if absent.",
+          "evidence_instruction": "Cite the report title or table header.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate part number, drawing number, drawing revision, sample identification, and measurement date or report date. Verdict logic: PASS if scope is clear; FLAG if scope conflicts or is ambiguous; NOT_FOUND if scope fields are absent.",
+          "evidence_instruction": "Cite the scope fields.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Confirm results list characteristic numbers or balloon numbers, nominal/specification, tolerance/limits, actual measured values, and pass/fail or OK/NOK judgment. Verdict logic: PASS if these fields are present; FLAG if important fields are missing; NOT_FOUND if no usable results table is visible.",
+          "evidence_instruction": "Cite one result row or header.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Check whether any visible measured result is outside tolerance or marked not OK. Verdict logic: PASS if all visible results are within limits/OK; FLAG if any result is out of tolerance, not OK, or missing disposition; NOT_FOUND if actual values are absent.",
+          "evidence_instruction": "Cite the result value and limit or disposition.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare dimensional characteristics against the Design Record (1). Verdict logic: PASS if measured characteristics trace to design requirements; FLAG if design requirements are omitted or unmatched; NOT_FOUND if design record is absent.",
+          "evidence_instruction": "Use related artifact 1 for characteristic traceability.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [1],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare dimensional result scope against ISIR (11) and PPF Submission Warrant (19). Verdict logic: PASS if part/revision/sample scope aligns; FLAG if scope conflicts; NOT_FOUND if related scope evidence is absent.",
+          "evidence_instruction": "Use related artifacts 11 and 19 for scope comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [11, 19],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm measurement equipment named in dimensional results is supported by MSA (8) or calibration evidence. Verdict logic: PASS if supported; FLAG if named equipment lacks support; NOT_FOUND if no equipment or MSA evidence is available.",
+          "evidence_instruction": "Use related artifact 8 for equipment support.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [8],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "judgment_or_semantic",
+          "agent_instruction": "Task: Assess whether dimensional results are legible and complete enough to validate all listed characteristics. Verdict logic: PASS if readable; FLAG if rows/values are cut off or unreadable; NOT_FOUND if no readable results are available.",
+          "evidence_instruction": "Cite a readable result row or identify unreadable content.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 10,
+      "element_name": "Material and Functional Test Results",
+      "applicability_rule": "Required when drawings, specifications, customer scope, or the product type require material, functional, performance, durability, surface, or regulatory tests.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 10 - Material and Functional Test Results.",
+        "Do not accept certificate presence alone when values or conformance statements are required.",
+        "Trace tests to specifications and submitted part scope."
+      ],
+      "watch_outs": [
+        "Material certificates and performance tests must match the submitted part, material, revision, and specification."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate material certificates, material test reports, functional test reports, performance reports, durability reports, or specification test results. Verdict logic: PASS if relevant evidence is present; NOT_FOUND if required tests are absent.",
+          "evidence_instruction": "Cite the report/certificate title.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate part number, material grade/specification, batch/lot/heat number, drawing revision, test date, and supplier/laboratory identity where applicable. Verdict logic: PASS if scope is clear; FLAG if scope conflicts or is ambiguous; NOT_FOUND if scope fields are absent.",
+          "evidence_instruction": "Cite the scope fields.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Confirm the report shows test method, requirement/specification limit, actual result, and pass/fail or conformance statement. Verdict logic: PASS if complete; FLAG if values fail or required fields are incomplete; NOT_FOUND if result evidence is absent.",
+          "evidence_instruction": "Cite one test result with requirement and value.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Check whether any visible material or functional result fails, is out of limit, or is conditionally accepted. Verdict logic: PASS if all visible results conform; FLAG if any fail/conditional/out-of-limit result appears; NOT_FOUND if conformance evidence is absent.",
+          "evidence_instruction": "Cite the failed/accepted result or conforming result.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare material and test specifications against Design Record (1). Verdict logic: PASS if required specifications are tested; FLAG if a design-required test/specification is missing or conflicting; NOT_FOUND if design record evidence is absent.",
+          "evidence_instruction": "Use related artifact 1 for specification traceability.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [1],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm laboratory evidence supports tests performed by internal or external labs. Compare against Qualified Laboratory Documentation (13). Verdict logic: PASS if lab qualification covers the test scope; FLAG if qualification is expired or scope mismatch; NOT_FOUND if lab qualification evidence is absent.",
+          "evidence_instruction": "Use related artifact 13 for lab qualification.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [13],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare test scope and conformance status against ISIR (11) and PPF Submission Warrant (19). Verdict logic: PASS if summaries align; FLAG if ISIR/warrant claims all requirements met while tests fail or are missing; NOT_FOUND if related summaries are absent.",
+          "evidence_instruction": "Use related artifacts 11 and 19 for summary comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [11, 19],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "judgment_or_semantic",
+          "agent_instruction": "Task: Assess whether test reports/certificates are legible and complete enough to validate requirements, values, and disposition. Verdict logic: PASS if readable; FLAG if values/specifications are unreadable or truncated; NOT_FOUND if no readable test content is available.",
+          "evidence_instruction": "Cite a readable result or identify unreadable content.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 11,
+      "element_name": "Initial Sample Inspection Report",
+      "applicability_rule": "Required as the VDA-specific initial sample inspection summary connecting sampled parts, measured results, and submission disposition.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 11 - Initial Sample Inspection Report.",
+        "Treat ISIR/EMPB as a distinct artifact, not merely a dimensional-results table.",
+        "Check that the ISIR summarizes the same part, revision, samples, and results as related evidence."
+      ],
+      "watch_outs": [
+        "The ISIR may summarize many result artifacts; do not let summary wording override failed supporting evidence."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate an Initial Sample Inspection Report, ISIR, EMPB, first article report, or initial sample summary for the submitted part. Verdict logic: PASS if present; NOT_FOUND if absent.",
+          "evidence_instruction": "Cite the ISIR/EMPB title or header.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate customer, supplier, part number, drawing number, revision, sample quantity, sample date, and submission reason where present. Verdict logic: PASS if core scope is clear; FLAG if fields conflict or are incomplete; NOT_FOUND if core scope fields are absent.",
+          "evidence_instruction": "Cite the ISIR scope fields.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Confirm the ISIR includes measured characteristics or references to measurement/result attachments. Verdict logic: PASS if measurements or traceable attachments are present; FLAG if the report only states pass/fail without traceable result basis; NOT_FOUND if measurement/result summary is absent.",
+          "evidence_instruction": "Cite the measurement summary or attachment reference.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate final sample/result disposition, conformity statement, deviations, or open issues. Verdict logic: PASS if disposition is clear and no unresolved issues are visible; FLAG if nonconformance/deviation/open issue is stated; NOT_FOUND if disposition is absent.",
+          "evidence_instruction": "Cite the disposition or issue statement.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate responsible supplier sign-off, date, or approval/review field. Verdict logic: PASS if signed or otherwise formally reviewed; FLAG if signature/date is missing while the form requires it; NOT_FOUND if no sign-off/review evidence is present.",
+          "evidence_instruction": "Cite the sign-off or review field.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare ISIR part number and revision against Design Record (1) and PPF Submission Warrant (19). Verdict logic: PASS if aligned; FLAG if any conflict; NOT_FOUND if comparable values are absent.",
+          "evidence_instruction": "Use related artifacts 1 and 19 for comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [1, 19],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare ISIR summarized results against Dimensional Results (9), Test Results (10), and Capability Studies (12). Verdict logic: PASS if supporting evidence matches the ISIR disposition; FLAG if the ISIR reports conformance while supporting evidence is missing/failing/conflicting; NOT_FOUND if supporting evidence is absent.",
+          "evidence_instruction": "Use related artifacts 9, 10, and 12 for result comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [9, 10, 12],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm sample quantity and sample identity align with Sample Production Parts (15). Verdict logic: PASS if sample evidence matches the ISIR; FLAG if quantities/identities conflict; NOT_FOUND if sample evidence is absent.",
+          "evidence_instruction": "Use related artifact 15 for sample traceability.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [15],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 12,
+      "element_name": "Initial Process Capability",
+      "applicability_rule": "Required for characteristics where customer scope, design risk, process risk, or control planning requires capability/stability evidence.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 12 - Initial Process Capability.",
+        "Do not invent thresholds. Use printed customer or report thresholds only.",
+        "Check stability, sample basis, and linkage to controlled characteristics."
+      ],
+      "watch_outs": [
+        "A high capability index is not enough if the study uses the wrong characteristic, sample, or process state."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate initial process capability, short-term capability, SPC, control chart, or stability evidence for relevant characteristics. Verdict logic: PASS if present; NOT_FOUND if required capability evidence is absent.",
+          "evidence_instruction": "Cite the capability study title or characteristic.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate characteristic name/number, part number, process operation, sample size, time period, and study date. Verdict logic: PASS if study scope is clear; FLAG if scope is ambiguous or incomplete; NOT_FOUND if scope details are absent.",
+          "evidence_instruction": "Cite the study scope details.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate capability or stability metrics such as Cp, Cpk, Pp, Ppk, control limits, trend/stability assessment, or stated customer metric. Verdict logic: PASS if metrics meet printed requirements; FLAG if metrics fail or no requirement is stated; NOT_FOUND if metrics are absent.",
+          "evidence_instruction": "Cite metric value and threshold/decision.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Check whether out-of-control signals, non-normal assumptions, unstable trends, or special causes are identified and addressed. Verdict logic: PASS if stable or issues are documented with actions; FLAG if instability is visible without action; NOT_FOUND if stability evidence is absent.",
+          "evidence_instruction": "Cite stability statement, chart signal, or action.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare capability characteristics against Control Plan (7), PFMEA (6), and Customer Specific Requirements (18). Verdict logic: PASS if required characteristics are covered; FLAG if required capability evidence is missing; NOT_FOUND if related scope evidence is absent.",
+          "evidence_instruction": "Use related artifacts 6, 7, and 18 for required capability scope.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [6, 7, 18],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm measurement systems used for capability study are supported by MSA (8). Verdict logic: PASS if supported; FLAG if unsupported or unsuitable; NOT_FOUND if MSA evidence is absent.",
+          "evidence_instruction": "Use related artifact 8 for measurement-system support.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [8],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare capability sample/process scope against ISIR (11), Sample Production Parts (15), and PPF Submission Warrant (19). Verdict logic: PASS if the study belongs to the submitted sample/process; FLAG if scope conflicts; NOT_FOUND if related evidence is absent.",
+          "evidence_instruction": "Use related artifacts 11, 15, and 19 for scope comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [11, 15, 19],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "judgment_or_semantic",
+          "agent_instruction": "Task: Assess whether capability evidence is legible and complete enough to validate sample basis, metric, threshold, and decision. Verdict logic: PASS if readable; FLAG if important charts/values are unreadable; NOT_FOUND if no readable capability content is available.",
+          "evidence_instruction": "Cite readable metric or identify unreadable content.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 13,
+      "element_name": "Qualified Laboratory Documentation",
+      "applicability_rule": "Required when material, functional, calibration, or other test evidence is produced by a laboratory whose qualification must be demonstrated.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 13 - Qualified Laboratory Documentation.",
+        "Do not treat a lab name alone as qualification evidence.",
+        "Check validity dates and test-method scope."
+      ],
+      "watch_outs": [
+        "A laboratory certificate must cover the test methods actually used."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate laboratory accreditation, qualification certificate, internal lab approval, customer lab approval, or scope document. Verdict logic: PASS if present; NOT_FOUND if lab qualification evidence is absent.",
+          "evidence_instruction": "Cite the certificate or qualification title.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate laboratory name, accreditation/qualification body, certificate number, issue date, expiry date, and approval status. Verdict logic: PASS if current and complete; FLAG if expired/pending/incomplete; NOT_FOUND if these fields are absent.",
+          "evidence_instruction": "Cite certificate number/status/date.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Confirm the qualification scope includes the test methods, materials, measurements, or calibrations used in the submission. Verdict logic: PASS if scope covers submitted tests; FLAG if scope mismatch or insufficient scope; NOT_FOUND if scope is absent.",
+          "evidence_instruction": "Cite relevant scope text.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Check if the lab qualification was valid on the test date. Verdict logic: PASS if valid on the test date; FLAG if expired before or issued after the test without explanation; NOT_FOUND if dates are absent.",
+          "evidence_instruction": "Cite certificate date and test date where available.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare lab identity and test method against Material and Functional Test Results (10). Verdict logic: PASS if lab and method are covered; FLAG if mismatch; NOT_FOUND if test evidence is absent.",
+          "evidence_instruction": "Use related artifact 10 for lab/test comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [10],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare calibration or measurement-method qualification against MSA (8) and Checking Aids (17) where lab evidence supports measurement equipment. Verdict logic: PASS if consistent; FLAG if unsupported; NOT_FOUND if related evidence is absent.",
+          "evidence_instruction": "Use related artifacts 8 and 17 only when relevant.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [8, 17],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm Customer Specific Requirements (18) for laboratory accreditation or customer-approved lab are satisfied. Verdict logic: PASS if satisfied; FLAG if a required accreditation/approval is missing or wrong; NOT_FOUND if CSR evidence is absent where needed.",
+          "evidence_instruction": "Use related artifact 18 for customer lab requirements.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [18],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "judgment_or_semantic",
+          "agent_instruction": "Task: Assess whether lab qualification evidence is legible and complete enough to validate lab identity, scope, status, and dates. Verdict logic: PASS if readable; FLAG if scope/date/status is unreadable; NOT_FOUND if no readable lab qualification content is available.",
+          "evidence_instruction": "Cite readable certificate/scope text or identify unreadable content.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 14,
+      "element_name": "Appearance Approval",
+      "applicability_rule": "Required for parts with appearance, color, grain, gloss, texture, visible surface, master sample, or customer appearance requirements.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 14 - Appearance Approval.",
+        "Do not require appearance approval when evidence clearly shows the product is not appearance-relevant and no customer scope requires it.",
+        "Do not accept an unsigned appearance form if the form requires customer/supplier sign-off."
+      ],
+      "watch_outs": [
+        "Appearance approval may be conditional on specific color, grain, tooling, or master sample conditions."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate appearance approval, appearance inspection, surface approval, color approval, AAI, or evidence that appearance approval is not applicable. Verdict logic: PASS if appropriate evidence is present; NOT_FOUND if required appearance evidence is absent.",
+          "evidence_instruction": "Cite the appearance form title or non-applicability statement.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate part number, color/material/finish/texture identifier, drawing revision, sample identity, and appearance requirement. Verdict logic: PASS if scope is clear; FLAG if scope conflicts or is incomplete; NOT_FOUND if scope fields are absent.",
+          "evidence_instruction": "Cite appearance scope fields.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate inspection/disposition result and approval status. Verdict logic: PASS if appearance is accepted or not applicable; FLAG if rejected, conditional, open, or missing disposition; NOT_FOUND if status is absent.",
+          "evidence_instruction": "Cite approval/disposition status.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate customer or authorized approver signature/date where required by the form or customer scope. Verdict logic: PASS if required sign-off is present; FLAG if required sign-off/date is missing; NOT_FOUND if sign-off section is absent.",
+          "evidence_instruction": "Cite sign-off/date or required missing field.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare appearance requirements against Design Record (1) and Customer Specific Requirements (18). Verdict logic: PASS if appearance evidence covers required surfaces/finishes/colors; FLAG if required appearance items are missing; NOT_FOUND if related requirements are absent.",
+          "evidence_instruction": "Use related artifacts 1 and 18 for appearance requirement scope.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [1, 18],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare approved appearance sample identity against Sample Production Parts (15) and Reference Sample (16). Verdict logic: PASS if sample identity aligns; FLAG if sample mismatch or missing retained reference; NOT_FOUND if related sample evidence is absent.",
+          "evidence_instruction": "Use related artifacts 15 and 16 for sample comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [15, 16],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm appearance approval status is consistent with ISIR (11) and PPF Submission Warrant (19). Verdict logic: PASS if summaries match; FLAG if the warrant/ISIR claims complete conformity while appearance is open or failed; NOT_FOUND if related summary evidence is absent.",
+          "evidence_instruction": "Use related artifacts 11 and 19 for status comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [11, 19],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "judgment_or_semantic",
+          "agent_instruction": "Task: Assess whether appearance evidence is legible and complete enough to validate product scope, requirement, result, and approval. Verdict logic: PASS if readable; FLAG if important fields are unreadable; NOT_FOUND if no readable appearance content is available.",
+          "evidence_instruction": "Cite readable appearance evidence or identify unreadable content.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 15,
+      "element_name": "Sample Production Parts",
+      "applicability_rule": "Required to show that initial samples came from the intended production tooling, process, material, and lot where required by the PPF/PPA scope.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 15 - Sample Production Parts.",
+        "Do not accept sample photos or labels unless they identify the submitted part/sample scope.",
+        "Check production process origin and traceability."
+      ],
+      "watch_outs": [
+        "Samples built outside the intended serial process need clear authorization or they cannot prove serial conformity."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate evidence of sample production parts, initial samples, sample labels, sample shipment, sample photos, or sample inventory records. Verdict logic: PASS if present; NOT_FOUND if no sample-part evidence is supplied.",
+          "evidence_instruction": "Cite the sample evidence title, label, or photo caption.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate part number, revision, sample quantity, sample identifiers, lot/batch/date, and production location/line where available. Verdict logic: PASS if traceability is clear; FLAG if traceability is incomplete or conflicting; NOT_FOUND if sample identifiers are absent.",
+          "evidence_instruction": "Cite sample traceability fields.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Confirm samples are identified as produced from intended serial tooling/process/material or an authorized alternate. Verdict logic: PASS if serial origin or authorized alternate is shown; FLAG if origin is prototype/non-serial/unclear; NOT_FOUND if origin evidence is absent.",
+          "evidence_instruction": "Cite serial process/tooling/material origin evidence.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Confirm sample quantity meets the submitted customer scope or is at least explicitly documented. Verdict logic: PASS if quantity is documented and consistent with scope; FLAG if quantity is below stated requirement or inconsistent; NOT_FOUND if quantity is absent.",
+          "evidence_instruction": "Cite sample quantity and requirement if present.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare sample identity and quantity against ISIR (11), Dimensional Results (9), and Test Results (10). Verdict logic: PASS if the same samples or traceable lots are used; FLAG if result evidence uses different or unexplained samples; NOT_FOUND if result evidence is absent.",
+          "evidence_instruction": "Use related artifacts 9, 10, and 11 for sample traceability.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [9, 10, 11],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare sample-production process origin against Process Flow (5) and Control Plan (7). Verdict logic: PASS if samples come from the intended controlled process; FLAG if origin conflicts or controls are not represented; NOT_FOUND if process evidence is absent.",
+          "evidence_instruction": "Use related artifacts 5 and 7 for process origin comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [5, 7],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare sample traceability against PPF Submission Warrant (19). Verdict logic: PASS if sample scope aligns; FLAG if sample quantity/origin conflicts; NOT_FOUND if warrant evidence is absent.",
+          "evidence_instruction": "Use related artifact 19 for sample-scope comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [19],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "judgment_or_semantic",
+          "agent_instruction": "Task: Assess whether sample evidence is legible and complete enough to prove identity, quantity, origin, and traceability. Verdict logic: PASS if readable; FLAG if label/photo/record is ambiguous or unreadable; NOT_FOUND if no readable sample evidence is available.",
+          "evidence_instruction": "Cite readable sample evidence or identify ambiguity.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 16,
+      "element_name": "Reference Sample",
+      "applicability_rule": "Required when the customer or supplier retains a reference/master sample for comparison, subjective inspection, appearance, fit, function, or training.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 16 - Reference Sample.",
+        "Do not assume a reference sample exists unless evidence identifies it.",
+        "Check retention location, identity, and approval status."
+      ],
+      "watch_outs": [
+        "Reference samples must be traceable to the approved sample state, not just photographed parts."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate a reference sample, master sample, retained sample, boundary sample, or explicit statement that no reference sample is required. Verdict logic: PASS if appropriate evidence is present; NOT_FOUND if required reference-sample evidence is absent.",
+          "evidence_instruction": "Cite reference-sample title, id, or non-applicability statement.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate sample id, part number, revision, retention location, owner, date, and validity/retention period where applicable. Verdict logic: PASS if traceability and retention are clear; FLAG if incomplete; NOT_FOUND if traceability fields are absent.",
+          "evidence_instruction": "Cite sample id/location/owner/date fields.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Confirm customer/supplier sign-off or approval evidence is present when required by the form or customer scope. Verdict logic: PASS if required approval is present or not required; FLAG if required approval is missing; NOT_FOUND if approval section is absent.",
+          "evidence_instruction": "Cite approval/signature or non-required statement.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Identify reference-sample purpose such as visual comparison, fit/function, noise, appearance, operator training, or boundary condition. Verdict logic: PASS if purpose is clear; FLAG if retained sample purpose is ambiguous; NOT_FOUND if purpose is absent.",
+          "evidence_instruction": "Cite the stated reference-sample purpose.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare reference sample identity against Sample Production Parts (15) and ISIR (11). Verdict logic: PASS if identities align; FLAG if the reference sample does not trace to submitted samples; NOT_FOUND if related sample evidence is absent.",
+          "evidence_instruction": "Use related artifacts 11 and 15 for sample traceability.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [11, 15],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: If reference sample is used for appearance, compare against Appearance Approval (14). Verdict logic: PASS if appearance sample identity/status aligns; FLAG if mismatch; PASS if appearance is not applicable and evidence supports that; NOT_FOUND if appearance evidence is needed but absent.",
+          "evidence_instruction": "Use related artifact 14 when appearance-related.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [14],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare reference-sample requirement against Customer Specific Requirements (18). Verdict logic: PASS if customer requirement is met or no reference sample is required; FLAG if a required retained sample is missing/incomplete; NOT_FOUND if CSR evidence is absent where needed.",
+          "evidence_instruction": "Use related artifact 18 for customer reference-sample requirements.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [18],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "judgment_or_semantic",
+          "agent_instruction": "Task: Assess whether reference-sample evidence is legible and complete enough to validate identity, location, approval, and purpose. Verdict logic: PASS if readable; FLAG if important fields are unreadable; NOT_FOUND if no readable reference-sample content is available.",
+          "evidence_instruction": "Cite readable sample evidence or identify unreadable content.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 17,
+      "element_name": "Checking Aids",
+      "applicability_rule": "Required when special gauges, checking fixtures, templates, test stands, or other checking aids are used for product/process approval decisions.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 17 - Checking Aids.",
+        "Do not accept a photo alone unless it identifies the checking aid and calibration/approval context.",
+        "Trace checking aids to control-plan and measurement evidence."
+      ],
+      "watch_outs": [
+        "Checking aids must be suitable, identified, and valid for the characteristics they verify."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate checking-aid, fixture, special gauge, test stand, template, or explicit statement that no special checking aid is used. Verdict logic: PASS if appropriate evidence is present; NOT_FOUND if required checking-aid evidence is absent.",
+          "evidence_instruction": "Cite checking-aid title/id or no-aid statement.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate checking-aid identifier, revision, drawing/specification, owner/location, and applicable characteristic or operation. Verdict logic: PASS if traceability is clear; FLAG if incomplete/ambiguous; NOT_FOUND if identity/scope is absent.",
+          "evidence_instruction": "Cite aid id/revision/scope fields.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate calibration, verification, dimensional certification, or acceptance evidence for the checking aid. Verdict logic: PASS if valid; FLAG if expired/out-of-tolerance/incomplete; NOT_FOUND if validity evidence is absent.",
+          "evidence_instruction": "Cite calibration/verification status and date.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Confirm the checking aid has usage instructions, acceptance criteria, or inspection method where needed. Verdict logic: PASS if method/criteria are documented; FLAG if usage is unclear; NOT_FOUND if method/criteria are absent.",
+          "evidence_instruction": "Cite method or acceptance criteria.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare checking aids against Control Plan (7). Verdict logic: PASS if control-plan gauges/fixtures match checking-aid evidence; FLAG if a listed aid lacks support or an aid is used without control-plan reference; NOT_FOUND if control-plan evidence is absent.",
+          "evidence_instruction": "Use related artifact 7 for gauge/fixture comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [7],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm checking aids used in Dimensional Results (9) or ISIR (11) are identified and valid. Verdict logic: PASS if supported; FLAG if named aids are unsupported or invalid; NOT_FOUND if related measurement evidence is absent.",
+          "evidence_instruction": "Use related artifacts 9 and 11 for usage comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [9, 11],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare checking-aid requirements against Customer Specific Requirements (18). Verdict logic: PASS if required aids are documented; FLAG if customer-required aid evidence is missing/incomplete; NOT_FOUND if CSR evidence is absent where needed.",
+          "evidence_instruction": "Use related artifact 18 for checking-aid requirements.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [18],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "judgment_or_semantic",
+          "agent_instruction": "Task: Assess whether checking-aid evidence is legible and complete enough to validate identity, scope, validity, and use. Verdict logic: PASS if readable; FLAG if important fields are unreadable; NOT_FOUND if no readable checking-aid content is available.",
+          "evidence_instruction": "Cite readable checking-aid evidence or identify unreadable content.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 18,
+      "element_name": "Customer Specific Requirements",
+      "applicability_rule": "Required to capture customer-specific VDA PPF/PPA scope, forms, thresholds, submission content, approval rules, and deviations from generic expectations.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 18 - Customer Specific Requirements.",
+        "Customer-specific requirements govern when they conflict with generic assumptions.",
+        "Do not invent customer requirements from normal practice."
+      ],
+      "watch_outs": [
+        "VDA PPF/PPA scope may be customer-agreed; the system must not assume all artifacts are always submitted."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate customer-specific requirements, submission-scope agreement, customer form list, portal requirements, sampling scope, or an explicit statement that no additional customer-specific requirements apply. Verdict logic: PASS if present; NOT_FOUND if no CSR/scope evidence is supplied.",
+          "evidence_instruction": "Cite customer requirement or no-additional-requirements statement.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate customer name, program/part scope, applicable standard/version, submission scope, required artifacts, or customer portal/form references. Verdict logic: PASS if scope is clear; FLAG if scope is ambiguous or incomplete; NOT_FOUND if scope fields are absent.",
+          "evidence_instruction": "Cite customer scope fields.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate customer thresholds or special rules for capability, MSA, sample quantity, test methods, appearance, lab approval, or retention. Verdict logic: PASS if thresholds/rules are captured or explicitly none; FLAG if required thresholds are missing or contradicted; NOT_FOUND if requirement evidence is absent.",
+          "evidence_instruction": "Cite the customer threshold/rule or explicit none statement.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate customer-required approval route, approver, portal workflow, or disposition method. Verdict logic: PASS if approval route is defined or not required; FLAG if required approval path is incomplete; NOT_FOUND if approval route evidence is absent.",
+          "evidence_instruction": "Cite approval-route evidence.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare customer-required artifact scope against present artifacts and PPF Submission Warrant (19). Verdict logic: PASS if required artifacts/scope are reflected; FLAG if the warrant or package omits required content; NOT_FOUND if warrant evidence is absent.",
+          "evidence_instruction": "Use related artifact 19 for scope comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [19],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm customer thresholds are applied in MSA (8), Capability (12), Dimensional Results (9), and Test Results (10) where relevant. Verdict logic: PASS if customer values govern; FLAG if generic/internal values are used instead or thresholds are not applied; NOT_FOUND if related evidence is absent.",
+          "evidence_instruction": "Use related artifacts 8, 9, 10, and 12 for threshold application.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [8, 9, 10, 12],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Confirm customer-specific form/signature/approval requirements are reflected in ISIR (11), Appearance Approval (14), Reference Sample (16), and Customer Technical Approval (3) as applicable. Verdict logic: PASS if reflected; FLAG if required customer fields/signatures are missing; NOT_FOUND if related evidence is absent.",
+          "evidence_instruction": "Use related artifacts 3, 11, 14, and 16 as applicable.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [3, 11, 14, 16],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "judgment_or_semantic",
+          "agent_instruction": "Task: Assess whether customer-specific requirement evidence is legible and complete enough to validate scope, thresholds, artifacts, and approval route. Verdict logic: PASS if readable; FLAG if important requirement text is unreadable or incomplete; NOT_FOUND if no readable CSR content is available.",
+          "evidence_instruction": "Cite readable CSR evidence or identify unreadable content.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        }
+      ]
+    },
+    {
+      "element_number": 19,
+      "element_name": "PPF Submission Warrant",
+      "applicability_rule": "Required as the VDA PPF/PPA cover document summarizing submission identity, reason, scope, sample/result status, and requested/customer disposition.",
+      "prompt_instructions": [
+        "Validate only VDA artifact 19 - PPF Submission Warrant.",
+        "Treat this as the package summary; do not let it override failed supporting evidence.",
+        "Do not output Approved or Rejected."
+      ],
+      "watch_outs": [
+        "A warrant claiming all requirements are met must be flagged if any supporting artifact shows failures or missing evidence."
+      ],
+      "rules": [
+        {
+          "rule_id": "1",
+          "rule_type": "existence",
+          "agent_instruction": "Task: Locate a PPF/PPA submission warrant, PSW, Teilevorlagebestaetigung, submission cover sheet, or equivalent package summary. Verdict logic: PASS if present; NOT_FOUND if absent.",
+          "evidence_instruction": "Cite the warrant/cover sheet title.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "2",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate customer, supplier, part number, part name, drawing number, revision, submission date, and production site where present. Verdict logic: PASS if core identity is clear; FLAG if identity conflicts or is incomplete; NOT_FOUND if core identity fields are absent.",
+          "evidence_instruction": "Cite warrant identity fields.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "3",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate reason for submission, trigger, change reason, new part reason, requalification, tooling/process change, or customer request. Verdict logic: PASS if reason is stated; FLAG if reason conflicts with change evidence; NOT_FOUND if no reason is visible.",
+          "evidence_instruction": "Cite reason-for-submission text.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "4",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate submitted scope, artifact list, sample quantity, submission stage, requested disposition, or customer-agreed content. Verdict logic: PASS if scope is clear; FLAG if scope is incomplete or conflicts with CSR; NOT_FOUND if submission scope is absent.",
+          "evidence_instruction": "Cite submission-scope evidence.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "5",
+          "rule_type": "value_or_format",
+          "agent_instruction": "Task: Locate supplier declaration, responsible person, signature/date, or formal review statement. Verdict logic: PASS if formal supplier sign-off is present; FLAG if required sign-off/date is missing; NOT_FOUND if no declaration/sign-off evidence is present.",
+          "evidence_instruction": "Cite sign-off/declaration evidence.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "6",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare warrant part number and revision against Design Record (1), ISIR (11), Dimensional Results (9), and Test Results (10). Verdict logic: PASS if core identity aligns; FLAG if any supporting artifact conflicts; NOT_FOUND if supporting evidence is absent.",
+          "evidence_instruction": "Use related artifacts 1, 9, 10, and 11 for identity comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [1, 9, 10, 11],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "7",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare warrant claim that requirements are met against Dimensional Results (9), Test Results (10), ISIR (11), Capability (12), Appearance Approval (14), and Customer Technical Approval (3). Verdict logic: PASS if supporting artifacts show conforming or applicable status; FLAG if any required artifact shows failure, open issue, conditional release, or missing result; NOT_FOUND if supporting artifacts are absent.",
+          "evidence_instruction": "Use related artifacts 3, 9, 10, 11, 12, and 14 for package-status comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [3, 9, 10, 11, 12, 14],
+          "must_return_evidence": true
+        },
+        {
+          "rule_id": "8",
+          "rule_type": "cross_document",
+          "agent_instruction": "Task: Compare warrant submission scope against Customer Specific Requirements (18). Verdict logic: PASS if customer-required scope is reflected; FLAG if customer-required artifacts, forms, signatures, thresholds, or approvals are missing from the warrant/package; NOT_FOUND if CSR evidence is absent.",
+          "evidence_instruction": "Use related artifact 18 for scope comparison.",
+          "allowed_verdicts": ["PASS", "FLAG", "NOT_FOUND"],
+          "related_element_numbers": [18],
+          "must_return_evidence": true
+        }
+      ]
+    }
+  ]
+}

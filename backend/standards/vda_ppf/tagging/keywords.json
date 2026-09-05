@@ -1,0 +1,97 @@
+{
+  "Design Record": {
+    "high_priority": ["design record", "engineering drawing", "technical drawing", "customer drawing", "zeichnung"],
+    "medium_priority": ["part number", "revision", "drawing number", "specification", "tolerance", "datum"],
+    "low_priority": ["released", "customer", "supplier", "material", "surface"]
+  },
+  "Engineering Change Documentation": {
+    "high_priority": ["engineering change", "technical change", "change notice", "ecn", "eco", "ecr"],
+    "medium_priority": ["change number", "change description", "effective date", "revision change", "aenderung"],
+    "low_priority": ["approval", "reason", "customer", "drawing", "implementation"]
+  },
+  "Customer Technical Approval": {
+    "high_priority": ["customer technical approval", "customer engineering approval", "deviation approval", "sonderfreigabe"],
+    "medium_priority": ["approval number", "valid until", "temporary release", "customer release", "technical approval"],
+    "low_priority": ["signature", "date", "condition", "deviation", "customer"]
+  },
+  "Design FMEA": {
+    "high_priority": ["dfmea", "design fmea", "design risk analysis", "d-fmea", "konstruktions fmea"],
+    "medium_priority": ["failure mode", "effect", "cause", "prevention control", "detection control", "action priority"],
+    "low_priority": ["severity", "occurrence", "detection", "special characteristic", "responsibility"]
+  },
+  "Process Flow Diagram": {
+    "high_priority": ["process flow", "process flow diagram", "process sequence", "ablaufplan", "prozessablaufplan"],
+    "medium_priority": ["operation", "op no", "inspection", "rework", "storage", "packaging", "material flow"],
+    "low_priority": ["supplier", "revision", "production", "line", "station"]
+  },
+  "Process FMEA": {
+    "high_priority": ["pfmea", "process fmea", "process risk analysis", "p-fmea", "prozess fmea"],
+    "medium_priority": ["process step", "failure mode", "process cause", "prevention control", "detection control"],
+    "low_priority": ["severity", "occurrence", "detection", "action priority", "special characteristic"]
+  },
+  "Control Plan": {
+    "high_priority": ["control plan", "production control plan", "inspection plan", "pruefplan", "lenkungsplan"],
+    "medium_priority": ["characteristic", "method", "frequency", "reaction plan", "sample size", "control method"],
+    "low_priority": ["operation", "specification", "gauge", "responsibility", "record"]
+  },
+  "Measurement System Analysis": {
+    "high_priority": ["measurement system analysis", "msa", "gage r&r", "gauge r&r", "messsystemanalyse"],
+    "medium_priority": ["repeatability", "reproducibility", "calibration", "bias", "linearity", "stability"],
+    "low_priority": ["appraiser", "trial", "equipment", "measurement", "acceptance"]
+  },
+  "Dimensional Results": {
+    "high_priority": ["dimensional results", "measurement report", "dimension report", "inspection report", "massbericht"],
+    "medium_priority": ["balloon", "characteristic", "nominal", "tolerance", "actual", "ok", "not ok"],
+    "low_priority": ["sample", "cavity", "part number", "revision", "drawing"]
+  },
+  "Material and Functional Test Results": {
+    "high_priority": ["material test", "functional test", "performance test", "test report", "material certificate"],
+    "medium_priority": ["specification", "requirement", "result", "pass", "fail", "laboratory", "certificate"],
+    "low_priority": ["heat lot", "batch", "date", "method", "approval"]
+  },
+  "Initial Sample Inspection Report": {
+    "high_priority": ["initial sample inspection report", "isir", "initial sample report", "empb", "erstmusterpruefbericht"],
+    "medium_priority": ["initial sample", "sample quantity", "measured result", "disposition", "drawing revision"],
+    "low_priority": ["supplier", "customer", "part number", "signature", "date"]
+  },
+  "Initial Process Capability": {
+    "high_priority": ["initial process capability", "short term capability", "process capability", "capability study", "cpk", "ppk"],
+    "medium_priority": ["critical characteristic", "sample size", "subgroup", "stability", "capability index"],
+    "low_priority": ["control chart", "mean", "sigma", "nominal", "limit"]
+  },
+  "Qualified Laboratory Documentation": {
+    "high_priority": ["qualified laboratory", "laboratory documentation", "lab accreditation", "iso 17025", "laborqualifikation"],
+    "medium_priority": ["certificate", "scope", "test method", "valid until", "accreditation body"],
+    "low_priority": ["laboratory", "calibration", "material test", "performance test"]
+  },
+  "Appearance Approval": {
+    "high_priority": ["appearance approval", "appearance report", "aai", "surface approval", "oberflaechenfreigabe"],
+    "medium_priority": ["color", "gloss", "grain", "texture", "visible surface", "appearance requirement"],
+    "low_priority": ["customer", "sample", "signature", "date", "approval"]
+  },
+  "Sample Production Parts": {
+    "high_priority": ["sample production parts", "initial samples", "sample parts", "musterteile", "erstmusterteile"],
+    "medium_priority": ["sample quantity", "production run", "serial tooling", "serial process", "lot number"],
+    "low_priority": ["photo", "label", "storage", "shipment", "customer"]
+  },
+  "Reference Sample": {
+    "high_priority": ["reference sample", "master sample", "retained sample", "referenzmuster", "grenzmuster"],
+    "medium_priority": ["storage location", "sample id", "customer signature", "supplier signature", "retention"],
+    "low_priority": ["visual comparison", "operator training", "date", "part number"]
+  },
+  "Checking Aids": {
+    "high_priority": ["checking aids", "special gauge", "checking fixture", "fixture", "pruefmittel", "lehre"],
+    "medium_priority": ["calibration", "gauge id", "fixture id", "dimensional report", "acceptance"],
+    "low_priority": ["photo", "measurement", "inspection", "location", "maintenance"]
+  },
+  "Customer Specific Requirements": {
+    "high_priority": ["customer specific requirements", "csr", "customer requirement", "kundenspezifische anforderungen", "bemusterungsumfang"],
+    "medium_priority": ["scope agreement", "submission scope", "customer form", "threshold", "special requirement"],
+    "low_priority": ["portal", "approval", "vda", "ppf", "ppa"]
+  },
+  "PPF Submission Warrant": {
+    "high_priority": ["ppf submission warrant", "part submission warrant", "psw", "teilevorlagebestaetigung", "submission cover sheet"],
+    "medium_priority": ["reason for submission", "submission scope", "results meet requirements", "customer disposition", "ppa"],
+    "low_priority": ["supplier", "customer", "part number", "revision", "signature", "date"]
+  }
+}

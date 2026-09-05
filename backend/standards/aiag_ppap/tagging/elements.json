@@ -1,0 +1,284 @@
+{
+    "Design Record": {
+        "element_number": 1,
+        "mandatory": true,
+        "aliases": [
+            "design record",
+            "drawing",
+            "part drawing",
+            "engineering drawing",
+            "design"
+        ],
+        "supported_extensions": [
+            ".pdf",
+            ".docx"
+        ],
+        "description": "Engineering drawing or design record defining the product."
+    },
+
+    "Authorized Engineering Change Documents": {
+        "element_number": 2,
+        "mandatory": false,
+        "aliases": [
+            "engineering change",
+            "engineering change document",
+            "engineering change notice",
+            "engineering change request",
+            "ecn",
+            "ecr"
+        ],
+        "supported_extensions": [
+            ".pdf",
+            ".docx",
+            ".xlsx"
+        ],
+        "description": "Approved engineering changes applicable to the submitted part."
+    },
+
+    "Customer Engineering Approval": {
+        "element_number": 3,
+        "mandatory": false,
+        "aliases": [
+            "customer engineering approval",
+            "customer approval",
+            "engineering approval"
+        ],
+        "supported_extensions": [
+            ".pdf",
+            ".docx"
+        ],
+        "description": "Evidence of customer engineering approval."
+    },
+
+    "Design FMEA": {
+        "element_number": 4,
+        "mandatory": false,
+        "aliases": [
+            "dfmea",
+            "design fmea"
+        ],
+        "supported_extensions": [
+            ".xlsx",
+            ".xls",
+            ".pdf"
+        ],
+        "description": "Design Failure Mode and Effects Analysis."
+    },
+
+    "Process Flow Diagram": {
+        "element_number": 5,
+        "mandatory": true,
+        "aliases": [
+            "process flow",
+            "process flow diagram",
+            "flow diagram",
+            "flowchart",
+            "pfd"
+        ],
+        "supported_extensions": [
+            ".pdf",
+            ".pptx",
+            ".vsdx",
+            ".docx"
+        ],
+        "description": "Manufacturing process flow."
+    },
+
+    "Process FMEA": {
+        "element_number": 6,
+        "mandatory": true,
+        "aliases": [
+            "pfmea",
+            "process fmea"
+        ],
+        "supported_extensions": [
+            ".xlsx",
+            ".xls",
+            ".pdf"
+        ],
+        "description": "Process Failure Mode and Effects Analysis."
+    },
+
+    "Control Plan": {
+        "element_number": 7,
+        "mandatory": true,
+        "aliases": [
+            "control plan",
+            "controlplan",
+            "cp"
+        ],
+        "supported_extensions": [
+            ".xlsx",
+            ".xls",
+            ".pdf",
+            ".docx"
+        ],
+        "description": "Process Control Plan."
+    },
+
+    "Measurement System Analysis": {
+        "element_number": 8,
+        "mandatory": true,
+        "aliases": [
+            "msa",
+            "measurement system analysis",
+            "gage rr",
+            "gauge rr"
+        ],
+        "supported_extensions": [
+            ".xlsx",
+            ".pdf"
+        ],
+        "description": "Measurement System Analysis including Gage R&R."
+    },
+
+    "Dimensional Results": {
+        "element_number": 9,
+        "mandatory": true,
+        "aliases": [
+            "dimensional report",
+            "dimensional results",
+            "layout inspection",
+            "balloon report"
+        ],
+        "supported_extensions": [
+            ".xlsx",
+            ".pdf"
+        ],
+        "description": "Dimensional inspection results."
+    },
+
+    "Material / Performance Test Results": {
+        "element_number": 10,
+        "mandatory": true,
+        "aliases": [
+            "material test",
+            "performance test",
+            "test report",
+            "lab report"
+        ],
+        "supported_extensions": [
+            ".pdf",
+            ".xlsx"
+        ],
+        "description": "Material and performance testing results."
+    },
+
+    "Initial Process Studies": {
+        "element_number": 11,
+        "mandatory": true,
+        "aliases": [
+            "process capability",
+            "cpk",
+            "ppk",
+            "process study"
+        ],
+        "supported_extensions": [
+            ".xlsx",
+            ".pdf"
+        ],
+        "description": "Initial process capability studies."
+    },
+
+    "Qualified Laboratory Documentation": {
+        "element_number": 12,
+        "mandatory": true,
+        "aliases": [
+            "qualified laboratory",
+            "lab certificate",
+            "iso17025"
+        ],
+        "supported_extensions": [
+            ".pdf"
+        ],
+        "description": "Laboratory qualification documents."
+    },
+
+    "Appearance Approval Report": {
+        "element_number": 13,
+        "mandatory": false,
+        "aliases": [
+            "appearance approval report",
+            "aar"
+        ],
+        "supported_extensions": [
+            ".pdf"
+        ],
+        "description": "Appearance Approval Report when applicable."
+    },
+
+    "Sample Production Parts": {
+        "element_number": 14,
+        "mandatory": true,
+        "aliases": [
+            "sample production parts",
+            "sample part"
+        ],
+        "supported_extensions": [
+            ".jpg",
+            ".png",
+            ".pdf"
+        ],
+        "description": "Production sample parts."
+    },
+
+    "Master Sample": {
+        "element_number": 15,
+        "mandatory": true,
+        "aliases": [
+            "master sample"
+        ],
+        "supported_extensions": [
+            ".jpg",
+            ".png",
+            ".pdf"
+        ],
+        "description": "Master sample retained for comparison."
+    },
+
+    "Checking Aids": {
+        "element_number": 16,
+        "mandatory": false,
+        "aliases": [
+            "checking aids",
+            "fixture",
+            "gage",
+            "gauge"
+        ],
+        "supported_extensions": [
+            ".pdf",
+            ".jpg",
+            ".png"
+        ],
+        "description": "Inspection fixtures and checking aids."
+    },
+
+    "Customer Specific Requirements": {
+        "element_number": 17,
+        "mandatory": true,
+        "aliases": [
+            "customer specific requirements",
+            "csr"
+        ],
+        "supported_extensions": [
+            ".pdf",
+            ".docx",
+            ".xlsx"
+        ],
+        "description": "Customer-specific PPAP requirements."
+    },
+
+    "Part Submission Warrant": {
+        "element_number": 18,
+        "mandatory": true,
+        "aliases": [
+            "psw",
+            "part submission warrant",
+            "production part approval warrant"
+        ],
+        "supported_extensions": [
+            ".pdf"
+        ],
+        "description": "Official Part Submission Warrant."
+    }
+}

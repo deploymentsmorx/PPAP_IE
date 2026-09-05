@@ -1,0 +1,24 @@
+{
+  "standard_id": "vda_ppf",
+  "display_name": "VDA 2 PPF/PPA",
+  "artifact_label": "VDA submission artifact",
+  "artifact_prefix": "V",
+  "submission_model": "customer_agreed_scope",
+  "implementation_status": "catalog_ready",
+  "artifact_count": 19,
+  "element_count": 19,
+  "validation_sequence": [1, 2, 3, 18, 5, 6, 7, 8, 17, 9, 10, 13, 12, 11, 15, 16, 14, 19, 4],
+  "required_elements": [1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 18, 19],
+  "tagging": {
+    "elements_path": "tagging/elements.json",
+    "keywords_path": "tagging/keywords.json"
+  },
+  "validation": {
+    "checkpoint_catalog_path": "validation/checkpoints/vda_validation_checkpoints.json"
+  },
+  "reporting": {
+    "default_filename": "VDA_PPF_Report.pdf",
+    "title": "VDA PPF/PPA Report",
+    "kicker": "VDA Volume 2 Production Process and Product Approval"
+  }
+}

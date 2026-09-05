@@ -1,0 +1,2 @@
+"""AIAG PPAP standard assets."""
+

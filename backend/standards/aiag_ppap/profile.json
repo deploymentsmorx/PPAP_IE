@@ -1,0 +1,21 @@
+{
+  "standard_id": "aiag_ppap",
+  "display_name": "AIAG PPAP",
+  "artifact_label": "PPAP element",
+  "artifact_prefix": "E",
+  "submission_model": "aiag_submission_levels",
+  "validation_sequence": [1, 2, 3, 17, 4, 5, 6, 7, 8, 16, 9, 10, 12, 11, 14, 15, 13, 18],
+  "element_count": 18,
+  "tagging": {
+    "elements_path": "tagging/elements.json",
+    "keywords_path": "tagging/keywords.json"
+  },
+  "validation": {
+    "checkpoint_catalog_path": "validation/checkpoints/ppap_validation_checkpoints.json"
+  },
+  "reporting": {
+    "default_filename": "PPAP_Report.pdf",
+    "title": "PPAP Report",
+    "kicker": "Production Part Approval Process"
+  }
+}

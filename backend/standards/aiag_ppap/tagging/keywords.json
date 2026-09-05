@@ -1,0 +1,909 @@
+{
+    "Design Record": {
+    "high_priority": [
+        "design record",
+        "engineering drawing",
+        "part drawing",
+        "product drawing",
+        "drawing number",
+        "drawing revision",
+        "drawing rev",
+        "2d drawing",
+        "design specification",
+        "engineering specification",
+        "master drawing",
+        "released drawing",
+        "customer drawing"
+    ],
+
+    "medium_priority": [
+        "part number",
+        "part name",
+        "revision",
+        "material specification",
+        "material grade",
+        "dimension",
+        "dimensions",
+        "tolerance",
+        "geometric tolerance",
+        "gd&t",
+        "geometric dimensioning and tolerancing",
+        "surface finish",
+        "drawing scale",
+        "projection method",
+        "sheet number",
+        "drawing notes",
+        "units",
+        "bom",
+        "bill of materials"
+    ],
+
+    "low_priority": [
+        "approved by",
+        "checked by",
+        "drawn by",
+        "prepared by",
+        "customer",
+        "supplier",
+        "issue date",
+        "revision history",
+        "document number",
+        "document title",
+        "company name",
+        "page number",
+        "confidential",
+        "signature",
+        "date",
+        "assembly",
+        "component"
+    ]
+},  
+    "Authorized Engineering Change Documents": {
+    "high_priority": [
+        "authorized engineering change",
+        "engineering change document",
+        "engineering change notice",
+        "engineering change request",
+        "engineering change order",
+        "ecn",
+        "ecr",
+        "eco",
+        "change request",
+        "change notice",
+        "change order",
+        "change approval",
+        "approved engineering change"
+    ],
+
+    "medium_priority": [
+        "revision",
+        "revision level",
+        "revision history",
+        "drawing revision",
+        "change description",
+        "change summary",
+        "reason for change",
+        "affected parts",
+        "effective date",
+        "implementation date",
+        "approval date",
+        "customer approval",
+        "engineering approval",
+        "change number",
+        "release date"
+    ],
+
+    "low_priority": [
+        "approved by",
+        "prepared by",
+        "reviewed by",
+        "checked by",
+        "document number",
+        "document title",
+        "issue date",
+        "supplier",
+        "customer",
+        "department",
+        "signature",
+        "page number",
+        "document control",
+        "version",
+        "date"
+    ]
+},
+    "Customer Engineering Approval": {
+    "high_priority": [
+        "customer engineering approval",
+        "customer approval",
+        "engineering approval",
+        "customer sign off",
+        "customer signoff",
+        "approved by customer",
+        "customer authorization",
+        "engineering authorization",
+        "customer acceptance",
+        "approval letter",
+        "approval document",
+        "customer release"
+    ],
+
+    "medium_priority": [
+        "approval status",
+        "approval date",
+        "customer representative",
+        "customer signature",
+        "approved",
+        "engineering review",
+        "engineering release",
+        "submission approval",
+        "customer feedback",
+        "approval comments",
+        "customer engineer",
+        "review completed",
+        "approval reference"
+    ],
+
+    "low_priority": [
+        "customer",
+        "supplier",
+        "signature",
+        "date",
+        "approved by",
+        "reviewed by",
+        "prepared by",
+        "document number",
+        "document title",
+        "page number",
+        "revision",
+        "department"
+    ]
+},
+    "Design FMEA": {
+    "high_priority": [
+        "design fmea",
+        "dfmea",
+        "design failure mode and effects analysis",
+        "failure mode",
+        "potential failure mode",
+        "design controls",
+        "design verification",
+        "design validation",
+        "design responsibility",
+        "recommended actions",
+        "severity",
+        "occurrence",
+        "detection",
+        "risk priority number",
+        "rpn"
+    ],
+
+    "medium_priority": [
+        "cause of failure",
+        "effect of failure",
+        "preventive action",
+        "design review",
+        "current controls",
+        "design requirement",
+        "potential cause",
+        "failure analysis",
+        "action taken",
+        "verification result",
+        "responsibility",
+        "completion date",
+        "special characteristics"
+    ],
+
+    "low_priority": [
+        "customer",
+        "supplier",
+        "approved by",
+        "prepared by",
+        "reviewed by",
+        "date",
+        "document number",
+        "revision",
+        "page",
+        "signature",
+        "engineering"
+    ]
+},
+    "Process Flow Diagram": {
+    "high_priority": [
+        "process flow diagram",
+        "process flow",
+        "flow diagram",
+        "flow chart",
+        "flowchart",
+        "manufacturing flow",
+        "operation sequence",
+        "process sequence",
+        "process step",
+        "incoming inspection",
+        "outgoing inspection",
+        "operation",
+        "routing",
+        "workstation",
+        "process map"
+    ],
+
+    "medium_priority": [
+        "inspection",
+        "decision",
+        "transport",
+        "storage",
+        "production",
+        "assembly",
+        "machining",
+        "packaging",
+        "rework",
+        "quality check",
+        "operator",
+        "machine",
+        "input",
+        "output"
+    ],
+
+    "low_priority": [
+        "supplier",
+        "customer",
+        "page",
+        "document number",
+        "revision",
+        "prepared by",
+        "approved by",
+        "date",
+        "department",
+        "process"
+    ]
+},
+    "Process FMEA": {
+    "high_priority": [
+        "process fmea",
+        "pfmea",
+        "process failure mode and effects analysis",
+        "failure mode",
+        "potential failure mode",
+        "potential effect of failure",
+        "potential cause of failure",
+        "severity",
+        "occurrence",
+        "detection",
+        "risk priority number",
+        "rpn",
+        "recommended actions",
+        "current process controls",
+        "process controls"
+    ],
+
+    "medium_priority": [
+        "action taken",
+        "responsibility",
+        "completion date",
+        "special characteristics",
+        "prevention controls",
+        "detection controls",
+        "failure analysis",
+        "root cause",
+        "process step",
+        "manufacturing process",
+        "process requirement",
+        "verification",
+        "validation",
+        "risk assessment",
+        "process improvement"
+    ],
+
+    "low_priority": [
+        "customer",
+        "supplier",
+        "prepared by",
+        "approved by",
+        "reviewed by",
+        "revision",
+        "document number",
+        "page number",
+        "department",
+        "date",
+        "signature"
+    ]
+},
+    "Control Plan": {
+    "high_priority": [
+        "control plan",
+        "reaction plan",
+        "control method",
+        "process characteristic",
+        "product characteristic",
+        "special characteristic",
+        "sample size",
+        "sampling frequency",
+        "measurement technique",
+        "evaluation method",
+        "control limits",
+        "inspection method",
+        "control item",
+        "monitoring",
+        "process control"
+    ],
+
+    "medium_priority": [
+        "frequency",
+        "inspection",
+        "operator",
+        "gage",
+        "gauge",
+        "measurement system",
+        "control frequency",
+        "control strategy",
+        "reaction",
+        "corrective action",
+        "acceptance criteria",
+        "recording",
+        "verification",
+        "visual inspection",
+        "check sheet"
+    ],
+
+    "low_priority": [
+        "customer",
+        "supplier",
+        "prepared by",
+        "approved by",
+        "reviewed by",
+        "revision",
+        "page",
+        "document number",
+        "department",
+        "date",
+        "signature"
+    ]
+},
+    "Measurement System Analysis": {
+    "high_priority": [
+        "measurement system analysis",
+        "msa",
+        "gage rr",
+        "gage r&r",
+        "gauge rr",
+        "gauge r&r",
+        "repeatability",
+        "reproducibility",
+        "measurement variation",
+        "equipment variation",
+        "appraiser variation",
+        "study variation",
+        "bias",
+        "linearity",
+        "stability"
+    ],
+
+    "medium_priority": [
+        "ndc",
+        "number of distinct categories",
+        "measurement error",
+        "reference value",
+        "measurement capability",
+        "variation",
+        "control chart",
+        "calibration",
+        "measurement equipment",
+        "measurement process",
+        "analysis",
+        "statistical study",
+        "measurement uncertainty",
+        "gage study"
+    ],
+
+    "low_priority": [
+        "customer",
+        "supplier",
+        "prepared by",
+        "approved by",
+        "reviewed by",
+        "revision",
+        "document number",
+        "date",
+        "page number",
+        "signature",
+        "department"
+    ]
+},
+
+    "Dimensional Results": {
+    "high_priority": [
+        "dimensional results",
+        "dimensional report",
+        "layout inspection",
+        "full layout",
+        "balloon drawing",
+        "balloon report",
+        "measured dimension",
+        "actual dimension",
+        "nominal dimension",
+        "tolerance",
+        "inspection result",
+        "dimension report",
+        "characteristic number",
+        "measurement result",
+        "drawing characteristic"
+    ],
+
+    "medium_priority": [
+        "upper tolerance",
+        "lower tolerance",
+        "specification",
+        "inspection method",
+        "measurement equipment",
+        "gage",
+        "gauge",
+        "dimension status",
+        "pass",
+        "fail",
+        "sample measurement",
+        "feature number",
+        "drawing reference",
+        "inspection point",
+        "balloon number"
+    ],
+
+    "low_priority": [
+        "customer",
+        "supplier",
+        "prepared by",
+        "approved by",
+        "reviewed by",
+        "date",
+        "revision",
+        "page number",
+        "document number",
+        "signature"
+    ]
+},
+
+    "Material / Performance Test Results": {
+    "high_priority": [
+        "material test",
+        "performance test",
+        "material test report",
+        "performance test report",
+        "test results",
+        "laboratory report",
+        "chemical composition",
+        "mechanical properties",
+        "hardness",
+        "tensile strength",
+        "yield strength",
+        "elongation",
+        "impact strength",
+        "test certificate",
+        "material certification"
+    ],
+
+    "medium_priority": [
+        "heat treatment",
+        "coating thickness",
+        "salt spray",
+        "corrosion test",
+        "test standard",
+        "test method",
+        "specification",
+        "laboratory",
+        "sample tested",
+        "acceptance criteria",
+        "conformance",
+        "certificate",
+        "analysis report",
+        "property",
+        "result"
+    ],
+
+    "low_priority": [
+        "customer",
+        "supplier",
+        "approved by",
+        "prepared by",
+        "reviewed by",
+        "revision",
+        "date",
+        "page number",
+        "document number",
+        "signature"
+    ]
+},
+
+    "Initial Process Studies": {
+    "high_priority": [
+        "initial process study",
+        "process capability",
+        "process capability study",
+        "cpk",
+        "ppk",
+        "capability index",
+        "process performance",
+        "capability analysis",
+        "statistical capability",
+        "capability results",
+        "control chart",
+        "process variation",
+        "process stability",
+        "normal distribution",
+        "capability report"
+    ],
+
+    "medium_priority": [
+        "sample size",
+        "mean",
+        "standard deviation",
+        "sigma",
+        "histogram",
+        "x bar",
+        "r chart",
+        "process average",
+        "variation",
+        "statistical process control",
+        "spc",
+        "control limit",
+        "upper control limit",
+        "lower control limit",
+        "distribution"
+    ],
+
+    "low_priority": [
+        "customer",
+        "supplier",
+        "prepared by",
+        "approved by",
+        "reviewed by",
+        "revision",
+        "date",
+        "page number",
+        "document number",
+        "signature"
+    ]
+},
+    "Appearance Approval Report": {
+    "high_priority": [
+        "appearance approval report",
+        "appearance approval",
+        "aar",
+        "appearance requirement",
+        "appearance requirements",
+        "appearance waiver",
+        "color approval",
+        "grain approval",
+        "gloss approval",
+        "surface appearance",
+        "customer visible",
+        "visible surface"
+    ],
+
+    "medium_priority": [
+        "appearance",
+        "color",
+        "grain",
+        "gloss",
+        "surface finish",
+        "visible",
+        "texture",
+        "match standard",
+        "appearance applicable",
+        "appearance not applicable",
+        "waiver",
+        "aesthetic"
+    ],
+
+    "low_priority": [
+        "customer",
+        "supplier",
+        "approval",
+        "approved by",
+        "date",
+        "signature",
+        "document number",
+        "revision"
+    ]
+},
+
+    "Qualified Laboratory Documentation": {
+    "high_priority": [
+        "qualified laboratory",
+        "laboratory accreditation",
+        "iso 17025",
+        "iso17025",
+        "lab accreditation",
+        "laboratory certification",
+        "testing laboratory",
+        "calibration laboratory",
+        "accredited laboratory",
+        "laboratory scope",
+        "certificate of accreditation",
+        "lab certificate",
+        "testing facility",
+        "calibration certificate",
+        "accreditation body"
+    ],
+
+    "medium_priority": [
+        "laboratory",
+        "scope",
+        "certificate",
+        "calibration",
+        "test facility",
+        "authorized laboratory",
+        "quality system",
+        "valid until",
+        "registration number",
+        "testing capability",
+        "traceability",
+        "quality manual",
+        "compliance",
+        "standard",
+        "audit"
+    ],
+
+    "low_priority": [
+        "customer",
+        "supplier",
+        "prepared by",
+        "approved by",
+        "reviewed by",
+        "revision",
+        "page number",
+        "document number",
+        "date",
+        "signature"
+    ]
+},
+
+    "Sample Production Parts": {
+    "high_priority": [
+        "sample production part",
+        "sample part",
+        "production sample",
+        "production parts",
+        "sample submission",
+        "production trial",
+        "trial parts",
+        "sample quantity",
+        "production run",
+        "production piece",
+        "representative sample",
+        "submission sample",
+        "initial production sample",
+        "sample identification",
+        "sample lot"
+    ],
+
+    "medium_priority": [
+        "sample",
+        "production",
+        "part",
+        "batch",
+        "lot",
+        "inspection",
+        "quantity",
+        "shipment",
+        "packaging",
+        "label",
+        "traceability",
+        "serial number",
+        "sample inspection",
+        "trial run",
+        "manufacturing lot"
+    ],
+
+    "low_priority": [
+        "customer",
+        "supplier",
+        "prepared by",
+        "approved by",
+        "reviewed by",
+        "revision",
+        "page number",
+        "document number",
+        "date",
+        "signature"
+    ]
+},
+    "Master Sample": {
+    "high_priority": [
+        "master sample",
+        "reference sample",
+        "approved sample",
+        "golden sample",
+        "master part",
+        "reference part",
+        "sample retention",
+        "retained sample",
+        "master reference",
+        "approved master",
+        "production master",
+        "comparison sample",
+        "sample approval",
+        "reference standard",
+        "master identification"
+    ],
+
+    "medium_priority": [
+        "sample",
+        "reference",
+        "approval",
+        "retention",
+        "inspection",
+        "comparison",
+        "production",
+        "traceability",
+        "identification",
+        "part",
+        "storage",
+        "verification",
+        "sample status",
+        "master record",
+        "control sample"
+    ],
+
+    "low_priority": [
+        "customer",
+        "supplier",
+        "prepared by",
+        "approved by",
+        "reviewed by",
+        "revision",
+        "document number",
+        "page number",
+        "date",
+        "signature"
+    ]
+},
+    "Checking Aids": {
+    "high_priority": [
+        "checking aid",
+        "checking aids",
+        "inspection fixture",
+        "fixture",
+        "inspection gauge",
+        "inspection gage",
+        "checking fixture",
+        "checking gauge",
+        "checking gage",
+        "inspection tool",
+        "measuring fixture",
+        "attribute gauge",
+        "go no go gauge",
+        "inspection equipment",
+        "checking device"
+    ],
+
+    "medium_priority": [
+        "calibration",
+        "fixture number",
+        "tool identification",
+        "maintenance",
+        "inspection",
+        "verification",
+        "measurement",
+        "equipment",
+        "tool",
+        "gage",
+        "gauge",
+        "accuracy",
+        "validation",
+        "tooling",
+        "calibration due"
+    ],
+
+    "low_priority": [
+        "customer",
+        "supplier",
+        "prepared by",
+        "approved by",
+        "reviewed by",
+        "document number",
+        "revision",
+        "page number",
+        "date",
+        "signature"
+    ]
+},
+    "Customer Specific Requirements": {
+    "high_priority": [
+        "customer specific requirements",
+        "csr",
+        "customer requirements",
+        "customer requirement",
+        "customer specific",
+        "customer standards",
+        "customer specification",
+        "special customer requirement",
+        "customer manual",
+        "customer procedure",
+        "customer quality requirements",
+        "customer ppap requirements",
+        "customer expectation",
+        "customer compliance",
+        "customer documentation"
+    ],
+
+    "medium_priority": [
+        "requirement",
+        "specification",
+        "standard",
+        "guideline",
+        "customer",
+        "quality requirement",
+        "approval",
+        "compliance",
+        "submission",
+        "audit",
+        "reference",
+        "document",
+        "process requirement",
+        "supplier requirement",
+        "customer instruction"
+    ],
+
+    "low_priority": [
+        "supplier",
+        "prepared by",
+        "approved by",
+        "reviewed by",
+        "document number",
+        "page number",
+        "revision",
+        "date",
+        "signature",
+        "department"
+    ]
+},
+
+    "Part Submission Warrant": {
+    "high_priority": [
+        "part submission warrant",
+        "psw",
+        "production part approval warrant",
+        "submission warrant",
+        "part warrant",
+        "submission level",
+        "submission reason",
+        "ppap submission",
+        "customer submission",
+        "supplier declaration",
+        "part approval",
+        "production approval",
+        "warrant approval",
+        "submission declaration",
+        "part submission"
+    ],
+
+    "medium_priority": [
+        "submission",
+        "supplier",
+        "customer",
+        "approval",
+        "reason for submission",
+        "part number",
+        "drawing number",
+        "revision",
+        "purchase order",
+        "manufacturing location",
+        "declaration",
+        "process",
+        "ppap",
+        "submission status",
+        "supplier code"
+    ],
+
+    "low_priority": [
+        "approved by",
+        "prepared by",
+        "reviewed by",
+        "date",
+        "signature",
+        "document number",
+        "page number",
+        "revision level",
+        "contact",
+        "department"
+    ]
+}
+}
