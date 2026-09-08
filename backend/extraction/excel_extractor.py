@@ -4,7 +4,6 @@ from openpyxl import load_workbook
 import os
 from .base_extractor import create_document_template
 from .output_paths import extracted_dir
-import win32com.client
 
 
 # -------------------------------------------------
@@ -371,6 +370,8 @@ def extract_pivot_tables(file_path):
     workbook = None
 
     try:
+
+        import win32com.client
 
         excel = win32com.client.Dispatch("Excel.Application")
 

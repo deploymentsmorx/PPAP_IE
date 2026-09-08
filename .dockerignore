@@ -1,5 +1,5 @@
-venv/
 .venv/
+venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -11,14 +11,12 @@ data/
 .env.local
 .env.secret
 
+.git/
+.gitignore
 
+tests/
+desktop/
 scratch_bomb.zip
 scheduled_tasks.lock
-
 PPAP_share
 PPAP_share.zip
-
-desktop/build/
-desktop/dist-exe/
-desktop/*.spec
-desktop/api_url.txt

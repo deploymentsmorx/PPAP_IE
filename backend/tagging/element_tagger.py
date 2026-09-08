@@ -4,7 +4,7 @@ import json
 import os
 
 from ..env import load_project_env
-from ..openai_client import DEFAULT_OPENAI_MODEL
+from ..anthropic_client import DEFAULT_ANTHROPIC_MODEL
 from ..standards.profiles import DEFAULT_STANDARD_ID, normalize_standard_id, tagging_paths
 from .llm_fallback import LlmFallbackClient
 from .postprocess import PredictionPostProcessorMixin
@@ -14,10 +14,10 @@ from .unit_builder import UnitBuilderMixin
 
 
 class ElementTagger(TextHelperMixin, PredictionRuleMixin, UnitBuilderMixin, PredictionPostProcessorMixin):
-    OPENAI_API_KEY_ENV_NAMES = (
-        "PPAP_TAGGING_OPENAI_API_KEY",
-        "PPAP_OPENAI_API_KEY",
-        "OPENAI_API_KEY",
+    ANTHROPIC_API_KEY_ENV_NAMES = (
+        "PPAP_TAGGING_ANTHROPIC_API_KEY",
+        "PPAP_ANTHROPIC_API_KEY",
+        "ANTHROPIC_API_KEY",
     )
 
     HIGH_WEIGHT = 10
@@ -72,10 +72,10 @@ class ElementTagger(TextHelperMixin, PredictionRuleMixin, UnitBuilderMixin, Pred
         load_project_env()
         self.standard_id = normalize_standard_id(standard_id)
         elements_path, keywords_path = tagging_paths(self.standard_id)
-        self.llm_model = os.getenv("PPAP_TAGGING_OPENAI_MODEL") or os.getenv("PPAP_OPENAI_MODEL") or DEFAULT_OPENAI_MODEL
-        self.llm_api_key = self._openai_api_key()
+        self.llm_model = os.getenv("PPAP_TAGGING_ANTHROPIC_MODEL") or os.getenv("PPAP_ANTHROPIC_MODEL") or DEFAULT_ANTHROPIC_MODEL
+        self.llm_api_key = self._anthropic_api_key()
         self.llm_enabled = self._tagging_fallback_enabled()
-        llm_url = os.getenv("PPAP_TAGGING_OPENAI_URL") or os.getenv("PPAP_OPENAI_URL")
+        llm_url = os.getenv("PPAP_TAGGING_ANTHROPIC_URL") or os.getenv("PPAP_ANTHROPIC_URL")
         llm_timeout = int(os.getenv("PPAP_TAGGING_TIMEOUT", str(self.LLM_TIMEOUT_SECONDS)))
         llm_max_output_tokens = int(
             os.getenv(
@@ -111,15 +111,15 @@ class ElementTagger(TextHelperMixin, PredictionRuleMixin, UnitBuilderMixin, Pred
             api_key=self.llm_api_key,
         )
 
-    def _openai_api_key(self):
-        for name in self.OPENAI_API_KEY_ENV_NAMES:
+    def _anthropic_api_key(self):
+        for name in self.ANTHROPIC_API_KEY_ENV_NAMES:
             value = os.getenv(name)
             if value and value.strip():
                 return value.strip()
         return None
 
     def _tagging_fallback_enabled(self):
-        configured = os.getenv("PPAP_TAGGING_OPENAI_FALLBACK")
+        configured = os.getenv("PPAP_TAGGING_ANTHROPIC_FALLBACK")
         if configured is None:
             return bool(self.llm_api_key)
         return configured.strip().lower() in {"1", "true", "yes", "on"}

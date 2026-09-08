@@ -1,0 +1,65 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+env:
+  PROJECT_ID: ie-erp-costsheet-pp
+  REGION: asia-south1
+  SERVICE: ppap-flow
+  REPOSITORY: ppap-flow
+  RUN_SERVICE_ACCOUNT: ppap-flow-run@ie-erp-costsheet-pp.iam.gserviceaccount.com
+  WORKLOAD_IDENTITY_PROVIDER: projects/677442438092/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+  DEPLOY_SERVICE_ACCOUNT: ppap-flow-deployer@ie-erp-costsheet-pp.iam.gserviceaccount.com
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build image
+        run: |
+          IMAGE="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }}"
+          docker build -t "$IMAGE" .
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+
+      - name: Push image
+        run: docker push "$IMAGE"
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy "${{ env.SERVICE }}" \
+            --image="$IMAGE" \
+            --region="${{ env.REGION }}" \
+            --project="${{ env.PROJECT_ID }}" \
+            --platform=managed \
+            --service-account="${{ env.RUN_SERVICE_ACCOUNT }}" \
+            --allow-unauthenticated \
+            --port=8080 \
+            --memory=4Gi \
+            --cpu=2 \
+            --timeout=300 \
+            --max-instances=4 \
+            --set-secrets="DATABASE_URL=database-url:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,PPAP_SUPER_ADMIN_PASSWORD=super-admin-password:latest,PPAP_FULL_ACCESS_PASSWORD=full-access-password:latest,PPAP_CREATOR_PASSWORD=creator-password:latest,PPAP_QUALITY_PASSWORD=quality-password:latest" \
+            --set-env-vars="PPAP_ANTHROPIC_MODEL=claude-opus-5,PPAP_REPORT_ANTHROPIC_MODEL=claude-opus-5,PPAP_TAGGING_ANTHROPIC_MODEL=claude-opus-5,PPAP_TAGGING_ANTHROPIC_FALLBACK=1,PPAP_VALIDATION_RULE_BATCH_SIZE=9,PPAP_VALIDATION_SCHEMA_RETRY_RULE_BATCH_SIZE=9,PPAP_SUPER_ADMIN_USER=superadmin,PPAP_FULL_ACCESS_USER=fullaccess,PPAP_CREATOR_USER=creator,PPAP_QUALITY_USER=quality,S3_BUCKET=ieppcostsheeterp,S3_PREFIX=PPAP/,AWS_REGION=us-east-2,S3_ENABLED=0"

@@ -3,6 +3,7 @@ uvicorn[standard]==0.34.0
 python-multipart==0.0.20
 psycopg[binary]==3.2.6
 boto3==1.37.28
+anthropic
 pymupdf
 pdfplumber
 pdf2image

@@ -8,33 +8,33 @@ from pathlib import Path
 from unittest.mock import patch
 
 from backend.config import Settings
-from backend.openai_client import OpenAIJsonClient
+from backend.anthropic_client import AnthropicJsonClient
 from backend.reporting import ReportGenerator
 from backend.tagging.element_tagger import ElementTagger
 
 
 class ModelRoutingTests(unittest.TestCase):
-    def test_report_and_tagging_fallback_use_openai(self) -> None:
+    def test_report_and_tagging_fallback_use_anthropic(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             settings = replace(Settings(project_root=Path(temp_dir)))
 
             with (
                 patch("backend.reporting.generator.load_project_env", lambda: None),
                 patch("backend.tagging.element_tagger.load_project_env", lambda: None),
-                patch.dict(os.environ, {"PPAP_OPENAI_MODEL": "gpt-4.1-mini"}, clear=True),
+                patch.dict(os.environ, {"PPAP_ANTHROPIC_MODEL": "claude-opus-5"}, clear=True),
             ):
                 report_generator = ReportGenerator(settings)
                 tagger = ElementTagger()
 
-        self.assertIsInstance(report_generator.narrative_client, OpenAIJsonClient)
-        self.assertEqual(report_generator.narrative_client.model, "gpt-4.1-mini")
-        self.assertIsInstance(tagger.llm.client, OpenAIJsonClient)
-        self.assertEqual(tagger.llm.model, "gpt-4.1-mini")
+        self.assertIsInstance(report_generator.narrative_client, AnthropicJsonClient)
+        self.assertEqual(report_generator.narrative_client.model, "claude-opus-5")
+        self.assertIsInstance(tagger.llm.client, AnthropicJsonClient)
+        self.assertEqual(tagger.llm.model, "claude-opus-5")
 
-    def test_tagging_fallback_auto_enables_when_openai_key_exists(self) -> None:
+    def test_tagging_fallback_auto_enables_when_anthropic_key_exists(self) -> None:
         with (
             patch("backend.tagging.element_tagger.load_project_env", lambda: None),
-            patch.dict(os.environ, {"PPAP_TAGGING_OPENAI_API_KEY": "tag-key"}, clear=True),
+            patch.dict(os.environ, {"PPAP_TAGGING_ANTHROPIC_API_KEY": "tag-key"}, clear=True),
         ):
             tagger = ElementTagger()
 
@@ -47,8 +47,8 @@ class ModelRoutingTests(unittest.TestCase):
             patch.dict(
                 os.environ,
                 {
-                    "PPAP_TAGGING_OPENAI_API_KEY": "tag-key",
-                    "PPAP_TAGGING_OPENAI_FALLBACK": "0",
+                    "PPAP_TAGGING_ANTHROPIC_API_KEY": "tag-key",
+                    "PPAP_TAGGING_ANTHROPIC_FALLBACK": "0",
                 },
                 clear=True,
             ),

@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from backend.config import Settings
-from backend.openai_client import DEFAULT_OPENAI_MODEL, OpenAIJsonClient
+from backend.anthropic_client import DEFAULT_ANTHROPIC_MODEL, AnthropicJsonClient
 from backend.validation import ValidationRunner
 from backend.validation.checkpoints import CheckpointCatalog
 
@@ -38,9 +38,9 @@ class ValidationTests(unittest.TestCase):
 
     def test_validation_client_default_timeout_is_1000_seconds(self) -> None:
         with patch.dict(os.environ, {}, clear=True):
-            self.assertEqual(OpenAIJsonClient(timeout_seconds=1000).timeout_seconds, 1000)
-            self.assertEqual(OpenAIJsonClient().model, DEFAULT_OPENAI_MODEL)
-            self.assertEqual(OpenAIJsonClient().max_output_tokens, 4096)
+            self.assertEqual(AnthropicJsonClient(timeout_seconds=1000).timeout_seconds, 1000)
+            self.assertEqual(AnthropicJsonClient().model, DEFAULT_ANTHROPIC_MODEL)
+            self.assertEqual(AnthropicJsonClient().max_output_tokens, 4096)
 
     def test_validation_dry_run_saves_prompt_evidence_and_report(self) -> None:
         self._write_tagged_json(
@@ -297,7 +297,7 @@ class ValidationTests(unittest.TestCase):
             model = "test-model"
 
             def validate(self, prompt: str) -> dict:
-                raise RuntimeError("OpenAI API request failed: timed out")
+                raise RuntimeError("Anthropic API request failed: timed out")
 
         self._write_tagged_json(
             "psw.tagging.json",

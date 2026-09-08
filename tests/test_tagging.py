@@ -68,7 +68,7 @@ class ElementTaggerTests(unittest.TestCase):
         self.assertNotIn("34.015750885", units[0]["text"])
         self.assertNotIn("811.687561035", units[0]["text"])
 
-    def test_weak_generic_text_does_not_call_openai_by_default(self) -> None:
+    def test_weak_generic_text_does_not_call_anthropic_by_default(self) -> None:
         document = {
             "document": {"file_name": "supplier_form.txt", "file_type": "text", "extension": ".txt"},
             "text": [{"text": "Customer Supplier Date Signature Part Number Revision"}],
@@ -77,10 +77,10 @@ class ElementTaggerTests(unittest.TestCase):
         with patch.dict(
             os.environ,
             {
-                "OPENAI_API_KEY": "",
-                "PPAP_OPENAI_API_KEY": "",
-                "PPAP_TAGGING_OPENAI_API_KEY": "",
-                "PPAP_TAGGING_OPENAI_FALLBACK": "0",
+                "ANTHROPIC_API_KEY": "",
+                "PPAP_ANTHROPIC_API_KEY": "",
+                "PPAP_TAGGING_ANTHROPIC_API_KEY": "",
+                "PPAP_TAGGING_ANTHROPIC_FALLBACK": "0",
             },
         ):
             result = ElementTagger().tag_document(document)

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from ..env import load_project_env
-from ..openai_client import OpenAIJsonClient
+from ..anthropic_client import AnthropicJsonClient
 from ..review import apply_rule_reviews
 from ..standards.profiles import DEFAULT_STANDARD_ID, artifact_prefix, normalize_standard_id, report_filename, standard_display_name, standard_profile
 from ..validation.checkpoints import CheckpointCatalog
@@ -549,7 +549,7 @@ class ReportGenerator:
                     "status": "ERROR",
                     "issue": self._short_text(model_error, 220),
                     "evidence": "",
-                    "recommended_action": "Re-run validation after confirming OpenAI API access is available.",
+                    "recommended_action": "Re-run validation after confirming Anthropic API access is available.",
                     "required": required,
                 }
             )
@@ -864,15 +864,15 @@ class ReportGenerator:
         self.catalog = CheckpointCatalog(standard_id=standard_id)
         self.profile = standard_profile(standard_id)
 
-    def _default_narrative_client(self) -> OpenAIJsonClient:
+    def _default_narrative_client(self) -> AnthropicJsonClient:
         load_project_env()
-        return OpenAIJsonClient(
-            model=os.getenv("PPAP_REPORT_OPENAI_MODEL") or os.getenv("PPAP_OPENAI_MODEL"),
+        return AnthropicJsonClient(
+            model=os.getenv("PPAP_REPORT_ANTHROPIC_MODEL") or os.getenv("PPAP_ANTHROPIC_MODEL"),
             timeout_seconds=int(
-                os.getenv("PPAP_REPORT_TIMEOUT", os.getenv("PPAP_OPENAI_TIMEOUT", "120"))
+                os.getenv("PPAP_REPORT_TIMEOUT", os.getenv("PPAP_ANTHROPIC_TIMEOUT", "120"))
             ),
             max_output_tokens=int(
-                os.getenv("PPAP_REPORT_MAX_OUTPUT_TOKENS", os.getenv("PPAP_OPENAI_MAX_OUTPUT_TOKENS", "4096"))
+                os.getenv("PPAP_REPORT_MAX_OUTPUT_TOKENS", os.getenv("PPAP_ANTHROPIC_MAX_OUTPUT_TOKENS", "4096"))
             ),
         )
 

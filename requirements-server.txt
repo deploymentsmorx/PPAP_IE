@@ -1,0 +1,26 @@
+# Linux/Cloud Run runtime dependencies.
+# Excludes pywin32 (Windows-only COM automation, used only for optional
+# Excel pivot-table extraction which degrades gracefully without it) and
+# pyinstaller (used only to build the Windows desktop EXE client).
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+psycopg[binary]==3.2.6
+boto3==1.37.28
+anthropic
+pymupdf
+pdfplumber
+pdf2image
+easyocr
+Pillow
+openpyxl
+python-docx
+lxml
+python-pptx
+reportlab==5.0.0
+opencv-python-headless
+pytesseract
+pyzbar
+imagehash
+piexif
+numpy

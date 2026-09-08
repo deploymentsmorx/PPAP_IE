@@ -47,7 +47,7 @@ class PredictionPostProcessorMixin:
                 continue
 
             if not self.llm_enabled:
-                prediction["llm_fallback"]["error"] = "Skipped: OpenAI tagging fallback disabled."
+                prediction["llm_fallback"]["error"] = "Skipped: Anthropic tagging fallback disabled."
                 continue
 
             fallback = self._llm_fallback(

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from ..env import load_project_env
-from ..openai_client import OpenAIJsonClient
+from ..anthropic_client import AnthropicJsonClient
 from ..rule_store import _clean_instruction, configured_catalog
 from ..standards.profiles import DEFAULT_STANDARD_ID, artifact_prefix, normalize_standard_id, standard_display_name, standard_profile
 from .checkpoints import CheckpointCatalog
@@ -48,7 +48,7 @@ class ValidationRunner:
     def __init__(
         self,
         settings,
-        llm_client: OpenAIJsonClient | None = None,
+        llm_client: AnthropicJsonClient | None = None,
         catalog: CheckpointCatalog | None = None,
         prompt_builder: ValidationPromptBuilder | None = None,
         standard_id: str = DEFAULT_STANDARD_ID,
@@ -59,7 +59,7 @@ class ValidationRunner:
         self.settings = settings
         self.catalog = catalog or configured_catalog(standard_id=self.standard_id)
         self.prompt_builder = prompt_builder or ValidationPromptBuilder()
-        self.llm_client = llm_client or OpenAIJsonClient()
+        self.llm_client = llm_client or AnthropicJsonClient()
         self.evidence_builder = EvidenceBuilder(settings.cases_dir)
         self.rule_batch_size = int(os.getenv("PPAP_VALIDATION_RULE_BATCH_SIZE", "9"))
         self.schema_retry_rule_batch_size = int(os.getenv("PPAP_VALIDATION_SCHEMA_RETRY_RULE_BATCH_SIZE", "9"))
@@ -713,7 +713,7 @@ class ValidationRunner:
                     "confidence": 0,
                     "evidence": [],
                     "reason": "Validation model call failed; checkpoint was not evaluated.",
-                    "recommended_action": "Confirm the OpenAI API key and model access are available, then re-run validation.",
+                    "recommended_action": "Confirm the Anthropic API key and model access are available, then re-run validation.",
                 }
                 for rule in element_rules.get("rules", [])
             ],

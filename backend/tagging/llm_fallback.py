@@ -1,8 +1,8 @@
-# OpenAI fallback for low-confidence tags.
+# Anthropic fallback for low-confidence tags.
 
 from typing import Any
 
-from ..openai_client import OpenAIJsonClient
+from ..anthropic_client import AnthropicJsonClient
 
 
 class LlmFallbackClient:
@@ -21,7 +21,7 @@ class LlmFallbackClient:
         self.match_element_name = match_element_name
         self.text_limit = text_limit
         self.timeout_seconds = timeout_seconds
-        self.client = OpenAIJsonClient(
+        self.client = AnthropicJsonClient(
             model=model,
             api_key=api_key,
             url=url,
