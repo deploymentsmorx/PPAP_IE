@@ -75,6 +75,18 @@ p {
   min-height: 100vh;
 }
 
+.app-shell[hidden],
+.login-overlay[hidden],
+.view[hidden],
+.workspace-panel[hidden],
+.section-panel[hidden],
+.report-sheet[hidden],
+.panel[hidden],
+.rule-editor[hidden],
+.notice[hidden] {
+  display: none !important;
+}
+
 .sidebar {
   position: sticky;
   top: 0;
@@ -1617,4 +1629,112 @@ code {
   .nav-sub {
     display: grid !important;
   }
+}
+
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(47, 111, 115, 0.18), transparent 40%),
+    linear-gradient(160deg, #eef3f7, #f7f9fc 55%, #e8eef4);
+}
+
+.login-overlay[hidden] {
+  display: none !important;
+}
+
+.login-card {
+  width: min(400px, 100%);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: stretch;
+  gap: 16px;
+}
+
+.login-brand {
+  margin: 0;
+  padding: 0;
+}
+
+.login-header {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.login-card h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 760;
+}
+
+.login-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.login-card .field {
+  width: 100%;
+}
+
+.login-card input[type="text"],
+.login-card input[type="password"] {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+.login-card input[type="text"]:focus,
+.login-card input[type="password"]:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-soft);
+}
+
+.login-card button[type="submit"] {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 4px;
+  border-radius: 8px;
+}
+
+.login-card .form-status {
+  min-height: 1.2em;
+  margin: 0;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+.session-user {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 0 8px;
 }

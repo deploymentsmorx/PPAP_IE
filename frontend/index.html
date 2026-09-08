@@ -7,7 +7,31 @@
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <main class="app-shell">
+  <div id="login-overlay" class="login-overlay" hidden>
+    <form id="login-form" class="login-card">
+      <div class="brand login-brand">
+        <div class="brand-text">
+          <strong>SmorX.ai</strong>
+          <span>PPAP Flow</span>
+        </div>
+      </div>
+      <div class="login-header">
+        <h1>Sign in</h1>
+        <p>Enter your credentials to continue.</p>
+      </div>
+      <div class="field">
+        <label for="login-username">Username</label>
+        <input id="login-username" name="username" type="text" required autocomplete="username" autofocus>
+      </div>
+      <div class="field">
+        <label for="login-password">Password</label>
+        <input id="login-password" name="password" type="password" required autocomplete="current-password">
+      </div>
+      <button type="submit">Sign in</button>
+      <div id="login-status" class="form-status" aria-live="polite"></div>
+    </form>
+  </div>
+  <main class="app-shell" id="app-shell" hidden>
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-text">
@@ -19,7 +43,7 @@
       <nav class="nav" aria-label="Primary">
         <button class="nav-button active" type="button" data-view="dashboard">Dashboard</button>
 
-        <div class="nav-group">
+        <div class="nav-group" id="submissions-nav-group">
           <button class="nav-group-toggle" type="button" data-group="submissions">Submissions</button>
           <div class="nav-sub" data-group-panel="submissions">
             <button class="nav-button" type="button" data-view="submissions" data-filter="all">All Submissions</button>
@@ -31,18 +55,18 @@
           </div>
         </div>
 
-        <div class="nav-group">
+        <div class="nav-group" id="workspace-nav-group">
           <button class="nav-group-toggle" type="button" data-group="workspace">PPAP Workspace</button>
           <div class="nav-sub" data-group-panel="workspace">
             <button class="nav-button" type="button" data-view="workspace" data-panel="details">Submission Details</button>
             <button class="nav-button" type="button" data-view="workspace" data-panel="documents">Documents</button>
-            <button class="nav-button" type="button" data-view="workspace" data-panel="validation">Validation</button>
-            <button class="nav-button" type="button" data-view="workspace" data-panel="issues">Issues / NCR</button>
-            <button class="nav-button" type="button" data-view="workspace" data-panel="approval">Approval</button>
+            <button class="nav-button quality-only" type="button" data-view="workspace" data-panel="validation">Validation</button>
+            <button class="nav-button quality-only" type="button" data-view="workspace" data-panel="issues">Issues / NCR</button>
+            <button class="nav-button quality-only" type="button" data-view="workspace" data-panel="approval">Approval</button>
           </div>
         </div>
 
-        <div class="nav-group">
+        <div class="nav-group" id="reports-nav-group">
           <button class="nav-group-toggle" type="button" data-group="reports">Reports</button>
           <div class="nav-sub" data-group-panel="reports">
             <button class="nav-button" type="button" data-view="report">Validation Report</button>
@@ -51,7 +75,7 @@
           </div>
         </div>
 
-        <div class="nav-group">
+        <div class="nav-group" id="rules-nav-group" hidden>
           <button class="nav-group-toggle" type="button" data-group="rules">Rules &amp; Standards</button>
           <div class="nav-sub" data-group-panel="rules">
             <button class="nav-button" type="button" data-view="rules" data-standard="aiag_ppap">AIAG PPAP</button>
@@ -70,6 +94,10 @@
           </div>
         </div>
       </nav>
+      <div class="sidebar-footer">
+        <div id="session-user" class="session-user"></div>
+        <button id="logout-button" class="button-secondary" type="button">Sign out</button>
+      </div>
     </aside>
 
     <section class="workspace">
@@ -77,10 +105,10 @@
         <div class="view-header">
           <div>
             <p class="eyebrow">PPAP Dashboard</p>
-            <h1 id="dashboard-greeting">Good morning, Quality Team</h1>
+            <h1 id="dashboard-greeting">Good morning, Team</h1>
             <p class="subhead">Create PPAP, collect evidence, validate, resolve issues, and track readiness.</p>
           </div>
-          <button id="new-submission" type="button">Create New PPAP</button>
+          <button id="new-submission" class="create-only" type="button">Create New PPAP</button>
         </div>
         <div id="kpi-grid" class="kpi-grid"></div>
         <div class="dashboard-grid">
@@ -124,7 +152,7 @@
             <h1>Submissions</h1>
             <p class="subhead" id="submissions-subhead">All PPAP packages in the control center.</p>
           </div>
-          <button id="new-submission-list" type="button">Create New PPAP</button>
+          <button id="new-submission-list" class="create-only" type="button">Create New PPAP</button>
         </div>
         <section class="panel">
           <div class="toolbar">

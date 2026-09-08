@@ -489,14 +489,14 @@ def _validation_health(app_settings: Settings, case_id: str) -> dict[str, int] |
 
 
 def _greeting() -> str:
-    hour = datetime.now().hour
+    hour = datetime.now().astimezone().hour
     if hour < 12:
         prefix = "Good morning"
     elif hour < 18:
         prefix = "Good afternoon"
     else:
         prefix = "Good evening"
-    return f"{prefix}, Quality Team"
+    return f"{prefix}, Team"
 
 
 def _parse_json_list(value: Any) -> list[str]:

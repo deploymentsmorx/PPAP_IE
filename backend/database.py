@@ -94,6 +94,24 @@ CREATE TABLE IF NOT EXISTS case_rule_reviews (
     FOREIGN KEY (case_id) REFERENCES cases(case_id),
     FOREIGN KEY (rule_key) REFERENCES validation_rules(rule_key)
 );
+
+CREATE TABLE IF NOT EXISTS users (
+    user_id TEXT PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    display_name TEXT NOT NULL DEFAULT '',
+    role TEXT NOT NULL,
+    password_salt TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+    token TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
 """
 
 
@@ -106,10 +124,13 @@ def connect(db_path: Path) -> sqlite3.Connection:
 
 
 def init_db(db_path: Path) -> None:
+    from .auth import ensure_auth_tables
+
     conn = connect(db_path)
     try:
         conn.executescript(SCHEMA)
         run_migrations(conn)
+        ensure_auth_tables(conn)
         conn.commit()
     finally:
         conn.close()

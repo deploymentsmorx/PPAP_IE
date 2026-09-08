@@ -2,6 +2,8 @@
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
+const AUTH_TOKEN_KEY = "smorx_ppap_token";
+
 const state = {
   caseId: "",
   ppapId: "",
@@ -13,7 +15,9 @@ const state = {
   submissionFilter: "all",
   severityFilter: "all",
   reviewPayload: null,
-  severity: null
+  severity: null,
+  token: localStorage.getItem(AUTH_TOKEN_KEY) || "",
+  user: null
 };
 
 const stepOrder = ["setup", "upload", "map", "validate", "resolve", "approval", "report", "submission"];
@@ -103,21 +107,186 @@ const dom = {
   ruleReferences: $("#rule-references"),
   ruleEnabled: $("#rule-enabled"),
   ruleFormStatus: $("#rule-form-status"),
-  cancelRule: $("#cancel-rule")
+  cancelRule: $("#cancel-rule"),
+  loginOverlay: $("#login-overlay"),
+  loginForm: $("#login-form"),
+  loginStatus: $("#login-status"),
+  appShell: $("#app-shell"),
+  rulesNavGroup: $("#rules-nav-group"),
+  reportsNavGroup: $("#reports-nav-group"),
+  sessionUser: $("#session-user"),
+  logoutButton: $("#logout-button")
 };
 
 bindShell();
-loadDashboard();
+bootAuth();
+
+async function bootAuth() {
+  if (!state.token) {
+    showLogin();
+    return;
+  }
+  try {
+    const me = await api("/api/auth/me");
+    applySession(me.user, state.token);
+    await loadDashboard();
+  } catch {
+    clearSession();
+    showLogin();
+  }
+}
+
+function showLogin() {
+  if (dom.appShell) dom.appShell.hidden = true;
+  if (dom.loginOverlay) dom.loginOverlay.hidden = false;
+}
+
+function showApp() {
+  if (dom.loginOverlay) dom.loginOverlay.hidden = true;
+  if (dom.appShell) dom.appShell.hidden = false;
+}
+
+function applySession(user, token) {
+  state.user = user;
+  state.token = token || "";
+  if (state.token) localStorage.setItem(AUTH_TOKEN_KEY, state.token);
+  showApp();
+  applyRoleVisibility();
+  if (dom.sessionUser) {
+    const label = user.role_label || user.role || "User";
+    dom.sessionUser.textContent = `${user.display_name || user.username} · ${label}`;
+  }
+}
+
+function clearSession() {
+  state.user = null;
+  state.token = "";
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  if (dom.rulesNavGroup) dom.rulesNavGroup.hidden = true;
+  if (dom.reportsNavGroup) dom.reportsNavGroup.hidden = true;
+  $$(".create-only, .quality-only").forEach((node) => {
+    node.hidden = false;
+  });
+}
+
+function permissions() {
+  return state.user?.permissions || {
+    create: false,
+    quality: false,
+    rules: false
+  };
+}
+
+function applyRoleVisibility() {
+  const perms = permissions();
+  if (dom.rulesNavGroup) dom.rulesNavGroup.hidden = !perms.rules;
+  if (dom.reportsNavGroup) dom.reportsNavGroup.hidden = !perms.quality;
+
+  $$(".create-only").forEach((node) => {
+    node.hidden = !perms.create;
+  });
+  $$(".quality-only").forEach((node) => {
+    node.hidden = !perms.quality;
+  });
+
+  // Workspace tabs: hide quality tabs for creation-only users.
+  dom.tabButtons.forEach((button) => {
+    const panel = button.dataset.panel;
+    const qualityPanels = ["validation", "issues", "approval"];
+    if (qualityPanels.includes(panel)) {
+      button.hidden = !perms.quality;
+    }
+  });
+
+  if (!perms.rules && !dom.views.rules.hidden) {
+    showView("dashboard");
+  }
+  if (!perms.quality && !dom.views.report.hidden) {
+    showView("dashboard");
+  }
+  if (!perms.create && !dom.views.create.hidden) {
+    showView("dashboard");
+  }
+}
+
+function isSuperAdmin() {
+  return Boolean(state.user?.is_super_admin || permissions().rules);
+}
+
+function canCreate() {
+  return Boolean(permissions().create);
+}
+
+function canQuality() {
+  return Boolean(permissions().quality);
+}
+
+async function handleLogin(event) {
+  event.preventDefault();
+  dom.loginStatus.textContent = "Signing in...";
+  dom.loginStatus.className = "form-status";
+  try {
+    const payload = await api("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: $("#login-username").value.trim(),
+        password: $("#login-password").value
+      })
+    });
+    applySession(payload.user, payload.token);
+    dom.loginForm.reset();
+    dom.loginStatus.textContent = "";
+    await loadDashboard();
+  } catch (error) {
+    dom.loginStatus.textContent = error.message;
+    dom.loginStatus.className = "form-status status-error";
+  }
+}
+
+async function handleLogout() {
+  try {
+    await api("/api/auth/logout", { method: "POST" });
+  } catch {
+    // ignore logout failures
+  }
+  clearSession();
+  showLogin();
+}
 
 function bindShell() {
-  $("#new-submission").addEventListener("click", () => showView("create"));
-  $("#new-submission-list").addEventListener("click", () => showView("create"));
-  $("#cancel-create").addEventListener("click", () => showView("dashboard"));
-  dom.createForm.addEventListener("submit", createSubmission);
-  dom.submissionSearch.addEventListener("input", debounce(() => loadSubmissions(state.submissionFilter), 250));
-  $("#refresh-matrix").addEventListener("click", loadMatrix);
-  $("#mark-approved").addEventListener("click", () => patchStatus("approved"));
-  $("#mark-submitted").addEventListener("click", () => patchStatus("submitted"));
+  if (dom.loginForm) dom.loginForm.addEventListener("submit", handleLogin);
+  if (dom.logoutButton) dom.logoutButton.addEventListener("click", handleLogout);
+
+  const bindClick = (id, handler) => {
+    const node = typeof id === "string" ? $(id) : id;
+    if (node) node.addEventListener("click", handler);
+  };
+
+  bindClick("#new-submission", () => {
+    if (!canCreate()) return;
+    showView("create");
+  });
+  bindClick("#new-submission-list", () => {
+    if (!canCreate()) return;
+    showView("create");
+  });
+  bindClick("#cancel-create", () => showView("dashboard"));
+  if (dom.createForm) {
+    dom.createForm.addEventListener("submit", async (event) => {
+      if (!canCreate()) {
+        event.preventDefault();
+        return;
+      }
+      await createSubmission(event);
+    });
+  }
+  if (dom.submissionSearch) {
+    dom.submissionSearch.addEventListener("input", debounce(() => loadSubmissions(state.submissionFilter), 250));
+  }
+  bindClick("#refresh-matrix", loadMatrix);
+  bindClick("#mark-approved", () => patchStatus("approved"));
+  bindClick("#mark-submitted", () => patchStatus("submitted"));
 
   $$(".nav-group-toggle").forEach((button) => {
     button.addEventListener("click", () => {
@@ -144,6 +313,10 @@ function bindShell() {
         showView("workspace");
         showPanel(button.dataset.panel || "details");
       } else if (view === "rules") {
+        if (!isSuperAdmin()) {
+          showView("dashboard");
+          return;
+        }
         if (button.dataset.standard) {
           state.standardId = button.dataset.standard;
           if (dom.standard) dom.standard.value = state.standardId;
@@ -151,6 +324,10 @@ function bindShell() {
         showView("rules");
         await loadRules();
       } else if (view === "report") {
+        if (!canQuality()) {
+          showView("dashboard");
+          return;
+        }
         showView("report");
       } else if (view === "dashboard") {
         showView("dashboard");
@@ -165,30 +342,37 @@ function bindShell() {
     button.addEventListener("click", () => showPanel(button.dataset.panel));
   });
 
-  dom.form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    await previewUpload();
-  });
-  dom.standard.addEventListener("change", () => {
-    state.standardId = dom.standard.value;
-    state.reportPrefix = state.standardId === "vda_ppf" ? "V" : "E";
-  });
-  dom.changeFiles.addEventListener("click", () => dom.fileInput.click());
-  dom.confirm.addEventListener("click", processUpload);
-  dom.validate.addEventListener("click", validateCase);
-  dom.generateReport.addEventListener("click", generateReport);
-  dom.addRule.addEventListener("click", async () => {
-    if (!state.rules) await loadRules();
-    openRuleEditor();
-  });
-  dom.cancelRule.addEventListener("click", closeRuleEditor);
-  dom.ruleForm.addEventListener("submit", saveRule);
+  if (dom.form) {
+    dom.form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      await previewUpload();
+    });
+  }
+  if (dom.standard) {
+    dom.standard.addEventListener("change", () => {
+      state.standardId = dom.standard.value;
+      state.reportPrefix = state.standardId === "vda_ppf" ? "V" : "E";
+    });
+  }
+  if (dom.changeFiles) dom.changeFiles.addEventListener("click", () => dom.fileInput && dom.fileInput.click());
+  if (dom.confirm) dom.confirm.addEventListener("click", processUpload);
+  if (dom.validate) dom.validate.addEventListener("click", validateCase);
+  if (dom.generateReport) dom.generateReport.addEventListener("click", generateReport);
+  if (dom.addRule) {
+    dom.addRule.addEventListener("click", async () => {
+      if (!isSuperAdmin()) return;
+      if (!state.rules) await loadRules();
+      openRuleEditor();
+    });
+  }
+  if (dom.cancelRule) dom.cancelRule.addEventListener("click", closeRuleEditor);
+  if (dom.ruleForm) dom.ruleForm.addEventListener("submit", saveRule);
 }
 
 async function loadDashboard() {
   try {
     const data = await api("/api/dashboard");
-    dom.greeting.textContent = data.greeting || "PPAP Dashboard";
+    dom.greeting.textContent = localGreeting();
     const counts = data.counts || {};
     dom.kpiGrid.replaceChildren(
       ...[
@@ -411,7 +595,7 @@ async function processUpload() {
 }
 
 async function validateCase() {
-  if (!state.caseId) return;
+  if (!state.caseId || !canQuality()) return;
   dom.validate.disabled = true;
   setStep("validate");
   busy("Validating enabled rules...");
@@ -441,7 +625,7 @@ async function validateCase() {
 }
 
 async function generateReport() {
-  if (!state.caseId) return;
+  if (!state.caseId || !canQuality()) return;
   dom.generateReport.disabled = true;
   clearNotice();
   try {
@@ -737,6 +921,10 @@ function reportElement(element, prefix = "E") {
 }
 
 async function loadRules() {
+  if (!isSuperAdmin()) {
+    dom.rulesCount.textContent = "Rules are available to Super Admin only.";
+    return;
+  }
   dom.rulesCount.textContent = "Loading rules...";
   try {
     state.rules = await api(`/api/rules?standard_id=${encodeURIComponent(state.standardId)}`);
@@ -854,7 +1042,9 @@ function closeRuleEditor() {
 
 async function api(url, options = {}) {
   const { expectNoContent = false, ...fetchOptions } = options;
-  const response = await fetch(url, fetchOptions);
+  const headers = { ...(fetchOptions.headers || {}) };
+  if (state.token) headers.Authorization = `Bearer ${state.token}`;
+  const response = await fetch(url, { ...fetchOptions, headers });
   if (expectNoContent && response.status === 204) return null;
   const text = await response.text();
   let payload = {};
@@ -1034,6 +1224,14 @@ function emptyKeyField() {
   box.className = "key-field";
   box.innerHTML = "<span>Package fields</span><strong>Not extracted</strong>";
   return box;
+}
+
+function localGreeting() {
+  const hour = new Date().getHours();
+  let prefix = "Good evening";
+  if (hour < 12) prefix = "Good morning";
+  else if (hour < 18) prefix = "Good afternoon";
+  return `${prefix}, Team`;
 }
 
 function formatBytes(bytes) {

@@ -7,11 +7,12 @@ import uuid
 from contextlib import closing
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from .auth import authenticate, current_user, extract_bearer_token, logout, require_super_admin
 from .config import settings
 from .database import connect, get_case_summary, init_db
 from .reporting import ReportGenerator
@@ -95,6 +96,11 @@ class SubmissionUpdate(BaseModel):
     status: str | None = None
 
 
+class LoginRequest(BaseModel):
+    username: str = Field(min_length=1, max_length=120)
+    password: str = Field(min_length=1, max_length=200)
+
+
 @app.get("/")
 def index() -> FileResponse:
     return FileResponse(settings.frontend_dir / "index.html")
@@ -103,6 +109,33 @@ def index() -> FileResponse:
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.post("/api/auth/login")
+def auth_login(payload: LoginRequest) -> dict:
+    try:
+        with closing(connect(settings.db_path)) as conn:
+            return authenticate(conn, payload.username, payload.password)
+    except PermissionError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/auth/logout")
+def auth_logout(authorization: str | None = Header(default=None)) -> dict[str, str]:
+    with closing(connect(settings.db_path)) as conn:
+        logout(conn, extract_bearer_token(authorization))
+    return {"status": "ok"}
+
+
+@app.get("/api/auth/me")
+def auth_me(authorization: str | None = Header(default=None)) -> dict:
+    with closing(connect(settings.db_path)) as conn:
+        user = current_user(conn, extract_bearer_token(authorization))
+    if user is None:
+        raise HTTPException(status_code=401, detail="Authentication required.")
+    return {"user": user}
 
 
 @app.get("/api/dashboard")
@@ -188,13 +221,18 @@ async def preview_case_upload(
 
 
 @app.get("/api/rules")
-def get_rules(standard_id: str = DEFAULT_STANDARD_ID) -> dict:
+def get_rules(
+    standard_id: str = DEFAULT_STANDARD_ID,
+    authorization: str | None = Header(default=None),
+) -> dict:
+    require_super_admin_or_403(authorization)
     with closing(connect(settings.db_path)) as conn:
         return build_rule_library(conn, standard_id=standard_id)
 
 
 @app.post("/api/rules")
-def create_rule(payload: RuleCreate) -> dict:
+def create_rule(payload: RuleCreate, authorization: str | None = Header(default=None)) -> dict:
+    require_super_admin_or_403(authorization)
     try:
         with closing(connect(settings.db_path)) as conn:
             return add_rule(
@@ -210,7 +248,12 @@ def create_rule(payload: RuleCreate) -> dict:
 
 
 @app.put("/api/rules/{rule_key}")
-def edit_rule(rule_key: str, payload: RuleUpdate) -> dict:
+def edit_rule(
+    rule_key: str,
+    payload: RuleUpdate,
+    authorization: str | None = Header(default=None),
+) -> dict:
+    require_super_admin_or_403(authorization)
     try:
         with closing(connect(settings.db_path)) as conn:
             return update_rule(
@@ -467,6 +510,14 @@ def case_or_404(case_id: str) -> dict:
     if summary is None:
         raise HTTPException(status_code=404, detail="Case not found.")
     return summary
+
+
+def require_super_admin_or_403(authorization: str | None) -> dict:
+    try:
+        with closing(connect(settings.db_path)) as conn:
+            return require_super_admin(conn, extract_bearer_token(authorization))
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 def parse_elements(value: str | None) -> list[int] | None:
