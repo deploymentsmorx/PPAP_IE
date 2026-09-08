@@ -1352,7 +1352,7 @@ async function createPlatformUser(event) {
       body: JSON.stringify({
         username: $("#pu-username").value.trim(),
         display_name: $("#pu-display").value.trim(),
-        role: $("#pu-role").value,
+        role: "super_admin",
         password: $("#pu-password").value
       })
     });

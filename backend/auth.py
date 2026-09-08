@@ -57,30 +57,15 @@ def ensure_auth_tables(conn: DbConnection) -> None:
 
 def seed_default_users(conn: DbConnection) -> None:
     load_project_env()
+    # Only Super Admin signs in directly to the web app (see authenticate()); every
+    # other role logs in through the desktop app's device-bound license flow, so no
+    # other platform-level default accounts are seeded here.
     defaults = [
         {
             "username": os.getenv("PPAP_SUPER_ADMIN_USER", "superadmin").strip() or "superadmin",
             "display_name": "Super Admin",
             "role": ROLE_SUPER_ADMIN,
             "password": os.getenv("PPAP_SUPER_ADMIN_PASSWORD", "SuperAdmin@123"),
-        },
-        {
-            "username": os.getenv("PPAP_FULL_ACCESS_USER", "fullaccess").strip() or "fullaccess",
-            "display_name": "Full Access",
-            "role": ROLE_FULL_ACCESS,
-            "password": os.getenv("PPAP_FULL_ACCESS_PASSWORD", "FullAccess@123"),
-        },
-        {
-            "username": os.getenv("PPAP_CREATOR_USER", "creator").strip() or "creator",
-            "display_name": "PPAP Creation",
-            "role": ROLE_CREATOR,
-            "password": os.getenv("PPAP_CREATOR_PASSWORD", "Creator@123"),
-        },
-        {
-            "username": os.getenv("PPAP_QUALITY_USER", "quality").strip() or "quality",
-            "display_name": "Quality Engineer",
-            "role": ROLE_QUALITY,
-            "password": os.getenv("PPAP_QUALITY_PASSWORD", "Quality@123"),
         },
     ]
 
@@ -143,6 +128,10 @@ def authenticate(conn: DbConnection, username: str, password: str) -> dict[str, 
     ).fetchone()
     if row is None or not verify_password(password, row["password_salt"], row["password_hash"]):
         raise PermissionError("Invalid username or password.")
+    if row["role"] != ROLE_SUPER_ADMIN:
+        raise PermissionError(
+            "Only Super Admin can sign in here. Sign in through the SmorX PPAP desktop app instead."
+        )
 
     token = secrets.token_urlsafe(32)
     created = _utc_now()
