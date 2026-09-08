@@ -85,10 +85,11 @@
           </div>
         </div>
 
-        <div class="nav-group">
+        <div class="nav-group" id="admin-nav-group" hidden>
           <button class="nav-group-toggle" type="button" data-group="admin">Administration</button>
           <div class="nav-sub" data-group-panel="admin">
-            <button class="nav-button nav-disabled" type="button" disabled title="Phase 3">Users</button>
+            <button class="nav-button" type="button" data-view="customers">Customers</button>
+            <button class="nav-button" type="button" data-view="users">Users</button>
             <button class="nav-button nav-disabled" type="button" disabled title="Phase 3">Roles</button>
             <button class="nav-button nav-disabled" type="button" disabled title="Phase 3">Settings</button>
           </div>
@@ -486,6 +487,88 @@
             </div>
           </form>
         </section>
+      </section>
+
+      <section id="customers-view" class="view" hidden>
+        <div class="view-header">
+          <div>
+            <p class="eyebrow">EXE Licensing</p>
+            <h1>Customers</h1>
+            <p class="subhead">Register licensed EXE clients: company, license key, device lock, and first engineer.</p>
+          </div>
+        </div>
+        <div class="admin-grid">
+          <section class="panel">
+            <h2>Create customer</h2>
+            <form id="customer-form" class="create-form">
+              <div class="field"><label for="cust-company">Company / organization name</label><input id="cust-company" required minlength="2"></div>
+              <div class="field"><label for="cust-license">License key (blank = auto AB-2026-XXXX)</label><input id="cust-license" placeholder="Leave blank to auto-generate"></div>
+              <div class="field"><label for="cust-install-password">Install password</label><input id="cust-install-password" type="password" required minlength="6"></div>
+              <div class="field"><label for="cust-device">Device ID</label><input id="cust-device" placeholder="DEV-..."></div>
+              <div class="field"><label for="cust-host">Host name</label><input id="cust-host" placeholder="DESKTOP-..."></div>
+              <div class="field"><label for="cust-eng-name">Engineer full name</label><input id="cust-eng-name" required minlength="2"></div>
+              <div class="field"><label for="cust-eng-email">Engineer email</label><input id="cust-eng-email" type="email" required></div>
+              <div class="field"><label for="cust-temp-password">Temporary password</label><input id="cust-temp-password" type="password" required minlength="6"></div>
+              <label class="toggle-row"><input id="cust-require-device" type="checkbox" checked><span>Require device (EXE only on approved PC)</span></label>
+              <label class="toggle-row"><input id="cust-grant-full" type="checkbox" checked><span>Grant full access</span></label>
+              <div id="customer-form-status" class="form-status" aria-live="polite"></div>
+              <button type="submit">Create &amp; save</button>
+            </form>
+            <div id="customer-credentials" class="credentials-box" hidden></div>
+          </section>
+          <section class="panel">
+            <h2>Licensed customers</h2>
+            <div id="customers-list" class="admin-list"></div>
+            <div id="engineer-panel" class="engineer-panel" hidden>
+              <h3>Add engineer</h3>
+              <form id="engineer-form" class="create-form">
+                <input id="eng-customer-id" type="hidden">
+                <div class="field"><label for="eng-name">Full name</label><input id="eng-name" required></div>
+                <div class="field"><label for="eng-email">Email</label><input id="eng-email" type="email" required></div>
+                <div class="field"><label for="eng-temp">Temporary password</label><input id="eng-temp" type="password" required minlength="6"></div>
+                <div class="field"><label for="eng-device">Device ID</label><input id="eng-device"></div>
+                <div class="field"><label for="eng-host">Host name</label><input id="eng-host"></div>
+                <div id="engineer-form-status" class="form-status"></div>
+                <button type="submit">Add engineer</button>
+              </form>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="users-view" class="view" hidden>
+        <div class="view-header">
+          <div>
+            <p class="eyebrow">Platform</p>
+            <h1>Users</h1>
+            <p class="subhead">Platform users (admin / creator / quality). Customers tab is for licensed EXE clients.</p>
+          </div>
+        </div>
+        <div class="admin-grid">
+          <section class="panel">
+            <h2>Add platform user</h2>
+            <form id="platform-user-form" class="create-form">
+              <div class="field"><label for="pu-username">Username</label><input id="pu-username" required></div>
+              <div class="field"><label for="pu-display">Display name</label><input id="pu-display"></div>
+              <div class="field">
+                <label for="pu-role">Role</label>
+                <select id="pu-role">
+                  <option value="creator">PPAP Creation</option>
+                  <option value="quality">Quality</option>
+                  <option value="full_access">Full Access</option>
+                  <option value="super_admin">Super Admin</option>
+                </select>
+              </div>
+              <div class="field"><label for="pu-password">Password</label><input id="pu-password" type="password" required minlength="6"></div>
+              <div id="platform-user-status" class="form-status"></div>
+              <button type="submit">Save user</button>
+            </form>
+          </section>
+          <section class="panel">
+            <h2>Platform users</h2>
+            <div id="platform-users-list" class="admin-list"></div>
+          </section>
+        </div>
       </section>
     </section>
   </main>

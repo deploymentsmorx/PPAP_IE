@@ -6,10 +6,10 @@ import hashlib
 import hmac
 import os
 import secrets
-import sqlite3
 from datetime import datetime, timezone
 from typing import Any
 
+from .db import DbConnection
 from .env import load_project_env
 
 ROLE_SUPER_ADMIN = "super_admin"
@@ -25,6 +25,13 @@ VALID_ROLES = {
     ROLE_CREATOR,
     ROLE_QUALITY,
     ROLE_USER,
+}
+
+PLATFORM_ROLES = {
+    ROLE_SUPER_ADMIN,
+    ROLE_FULL_ACCESS,
+    ROLE_CREATOR,
+    ROLE_QUALITY,
 }
 
 
@@ -43,34 +50,13 @@ def verify_password(password: str, salt: str, password_hash: str) -> bool:
     return hmac.compare_digest(candidate, password_hash)
 
 
-def ensure_auth_tables(conn: sqlite3.Connection) -> None:
-    conn.executescript(
-        """
-        CREATE TABLE IF NOT EXISTS users (
-            user_id TEXT PRIMARY KEY,
-            username TEXT NOT NULL UNIQUE,
-            display_name TEXT NOT NULL DEFAULT '',
-            role TEXT NOT NULL,
-            password_salt TEXT NOT NULL,
-            password_hash TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS sessions (
-            token TEXT PRIMARY KEY,
-            user_id TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            expires_at TEXT NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users(user_id)
-        );
-        """
-    )
+def ensure_auth_tables(conn: DbConnection) -> None:
+    # Tables are created in database.init_db schema; seed defaults here.
     seed_default_users(conn)
 
 
-def seed_default_users(conn: sqlite3.Connection) -> None:
+def seed_default_users(conn: DbConnection) -> None:
     load_project_env()
-    # Keep passwords in sync with defaults so demo logins stay reliable.
     defaults = [
         {
             "username": os.getenv("PPAP_SUPER_ADMIN_USER", "superadmin").strip() or "superadmin",
@@ -98,7 +84,6 @@ def seed_default_users(conn: sqlite3.Connection) -> None:
         },
     ]
 
-    # Migrate legacy generic "user" rows to quality.
     conn.execute(
         "UPDATE users SET role = ? WHERE role = ?",
         (ROLE_QUALITY, ROLE_USER),
@@ -114,7 +99,8 @@ def seed_default_users(conn: sqlite3.Connection) -> None:
             conn.execute(
                 """
                 UPDATE users
-                SET display_name = ?, role = ?, password_salt = ?, password_hash = ?
+                SET display_name = ?, role = ?, password_salt = ?, password_hash = ?,
+                    user_kind = 'platform'
                 WHERE username = ?
                 """,
                 (
@@ -129,8 +115,9 @@ def seed_default_users(conn: sqlite3.Connection) -> None:
         conn.execute(
             """
             INSERT INTO users (
-                user_id, username, display_name, role, password_salt, password_hash, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                user_id, username, display_name, role, password_salt, password_hash,
+                created_at, must_change_password, user_kind
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 'platform')
             """,
             (
                 secrets.token_hex(8),
@@ -144,7 +131,7 @@ def seed_default_users(conn: sqlite3.Connection) -> None:
         )
 
 
-def authenticate(conn: sqlite3.Connection, username: str, password: str) -> dict[str, Any]:
+def authenticate(conn: DbConnection, username: str, password: str) -> dict[str, Any]:
     username = str(username or "").strip()
     password = str(password or "")
     if not username or not password:
@@ -173,14 +160,14 @@ def authenticate(conn: sqlite3.Connection, username: str, password: str) -> dict
     }
 
 
-def logout(conn: sqlite3.Connection, token: str | None) -> None:
+def logout(conn: DbConnection, token: str | None) -> None:
     if not token:
         return
     conn.execute("DELETE FROM sessions WHERE token = ?", (token,))
     conn.commit()
 
 
-def current_user(conn: sqlite3.Connection, token: str | None) -> dict[str, Any] | None:
+def current_user(conn: DbConnection, token: str | None) -> dict[str, Any] | None:
     if not token:
         return None
     row = conn.execute(
@@ -195,14 +182,14 @@ def current_user(conn: sqlite3.Connection, token: str | None) -> dict[str, Any] 
     return serialize_user(dict(row)) if row else None
 
 
-def require_user(conn: sqlite3.Connection, token: str | None) -> dict[str, Any]:
+def require_user(conn: DbConnection, token: str | None) -> dict[str, Any]:
     user = current_user(conn, token)
     if user is None:
         raise PermissionError("Authentication required.")
     return user
 
 
-def require_super_admin(conn: sqlite3.Connection, token: str | None) -> dict[str, Any]:
+def require_super_admin(conn: DbConnection, token: str | None) -> dict[str, Any]:
     user = require_user(conn, token)
     if user.get("role") != ROLE_SUPER_ADMIN:
         raise PermissionError("Super admin access required.")
@@ -214,10 +201,12 @@ def permissions_for_role(role: str) -> dict[str, bool]:
     create = normalized in {ROLE_SUPER_ADMIN, ROLE_FULL_ACCESS, ROLE_CREATOR}
     quality = normalized in {ROLE_SUPER_ADMIN, ROLE_FULL_ACCESS, ROLE_QUALITY}
     rules = normalized == ROLE_SUPER_ADMIN
+    admin = normalized == ROLE_SUPER_ADMIN
     return {
         "create": create,
         "quality": quality,
         "rules": rules,
+        "admin": admin,
     }
 
 
@@ -243,8 +232,113 @@ def serialize_user(row: dict[str, Any]) -> dict[str, Any]:
         "role": role,
         "role_label": role_label(role),
         "is_super_admin": role == ROLE_SUPER_ADMIN,
+        "must_change_password": bool(row.get("must_change_password")),
+        "user_kind": row.get("user_kind") or "platform",
+        "customer_id": row.get("customer_id"),
         "permissions": permissions,
     }
+
+
+def list_platform_users(conn: DbConnection) -> dict[str, Any]:
+    rows = conn.execute(
+        """
+        SELECT * FROM users
+        WHERE COALESCE(user_kind, 'platform') = 'platform'
+        ORDER BY created_at
+        """
+    ).fetchall()
+    return {"items": [serialize_user(dict(row)) for row in rows], "count": len(rows)}
+
+
+def create_platform_user(conn: DbConnection, payload: dict[str, Any]) -> dict[str, Any]:
+    username = str(payload.get("username") or "").strip()
+    display_name = str(payload.get("display_name") or username).strip()
+    role = str(payload.get("role") or ROLE_QUALITY).strip()
+    password = str(payload.get("password") or "").strip()
+    if not username or len(password) < 6:
+        raise ValueError("Username and password (min 6) are required.")
+    if role not in PLATFORM_ROLES:
+        raise ValueError("Invalid role.")
+    existing = conn.execute("SELECT 1 AS ok FROM users WHERE username = ?", (username,)).fetchone()
+    if existing:
+        raise ValueError("Username already exists.")
+    salt, password_hash = hash_password(password)
+    user_id = secrets.token_hex(8)
+    conn.execute(
+        """
+        INSERT INTO users (
+            user_id, username, display_name, role, password_salt, password_hash,
+            created_at, must_change_password, user_kind
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'platform')
+        """,
+        (
+            user_id,
+            username,
+            display_name,
+            role,
+            salt,
+            password_hash,
+            _utc_now(),
+            1 if payload.get("must_change_password") else 0,
+        ),
+    )
+    conn.commit()
+    row = conn.execute("SELECT * FROM users WHERE user_id = ?", (user_id,)).fetchone()
+    return serialize_user(dict(row))
+
+
+def update_platform_user(conn: DbConnection, user_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    row = conn.execute(
+        "SELECT * FROM users WHERE user_id = ? AND COALESCE(user_kind, 'platform') = 'platform'",
+        (user_id,),
+    ).fetchone()
+    if row is None:
+        raise KeyError("User not found.")
+    display_name = payload.get("display_name")
+    role = payload.get("role")
+    password = payload.get("password")
+    fields = []
+    params: list[Any] = []
+    if display_name is not None:
+        fields.append("display_name = ?")
+        params.append(str(display_name).strip())
+    if role is not None:
+        if role not in PLATFORM_ROLES:
+            raise ValueError("Invalid role.")
+        fields.append("role = ?")
+        params.append(role)
+    if password:
+        if len(str(password)) < 6:
+            raise ValueError("Password must be at least 6 characters.")
+        salt, password_hash = hash_password(str(password))
+        fields.extend(["password_salt = ?", "password_hash = ?"])
+        params.extend([salt, password_hash])
+    if not fields:
+        raise ValueError("No updatable fields provided.")
+    params.append(user_id)
+    conn.execute(f"UPDATE users SET {', '.join(fields)} WHERE user_id = ?", params)
+    conn.commit()
+    updated = conn.execute("SELECT * FROM users WHERE user_id = ?", (user_id,)).fetchone()
+    return serialize_user(dict(updated))
+
+
+def delete_platform_user(conn: DbConnection, user_id: str) -> None:
+    row = conn.execute(
+        "SELECT * FROM users WHERE user_id = ? AND COALESCE(user_kind, 'platform') = 'platform'",
+        (user_id,),
+    ).fetchone()
+    if row is None:
+        raise KeyError("User not found.")
+    if row["role"] == ROLE_SUPER_ADMIN:
+        count = conn.execute(
+            "SELECT COUNT(*) AS c FROM users WHERE role = ? AND COALESCE(user_kind, 'platform') = 'platform'",
+            (ROLE_SUPER_ADMIN,),
+        ).fetchone()
+        if int(count["c"]) <= 1:
+            raise ValueError("Cannot delete the last super admin.")
+    conn.execute("DELETE FROM sessions WHERE user_id = ?", (user_id,))
+    conn.execute("DELETE FROM users WHERE user_id = ?", (user_id,))
+    conn.commit()
 
 
 def extract_bearer_token(authorization: str | None) -> str | None:

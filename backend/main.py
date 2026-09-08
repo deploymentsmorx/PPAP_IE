@@ -1,4 +1,4 @@
-# FastAPI routes for the SmorX PPAP Control Center.
+﻿# FastAPI routes for the SmorX PPAP Control Center.
 
 import csv
 import io
@@ -12,8 +12,28 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from .auth import authenticate, current_user, extract_bearer_token, logout, require_super_admin
+from .auth import (
+    authenticate,
+    create_platform_user,
+    current_user,
+    delete_platform_user,
+    extract_bearer_token,
+    list_platform_users,
+    logout,
+    require_super_admin,
+    require_user,
+    update_platform_user,
+)
 from .config import settings
+from .customers import (
+    activate_license,
+    add_engineer,
+    change_engineer_password,
+    create_customer,
+    list_customers,
+    login_engineer,
+    serialize_customer,
+)
 from .database import connect, get_case_summary, init_db
 from .reporting import ReportGenerator
 from .review import clear_rule_review, review_payload, save_rule_review
@@ -43,7 +63,12 @@ from .validation import ValidationRunner
 
 
 settings.ensure_dirs()
-init_db(settings.db_path)
+try:
+    init_db()
+except Exception as exc:  # noqa: BLE001 — allow boot when Neon is briefly unreachable
+    import logging
+
+    logging.getLogger(__name__).warning("Database init deferred: %s", exc)
 
 app = FastAPI(title="SmorX.ai PPAP Flow")
 app.mount("/static", StaticFiles(directory=settings.frontend_dir), name="static")
@@ -101,6 +126,64 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=200)
 
 
+class CustomerCreate(BaseModel):
+    company_name: str = Field(min_length=2, max_length=200)
+    license_key: str = Field(default="", max_length=80)
+    install_password: str = Field(min_length=6, max_length=200)
+    device_id: str = Field(default="", max_length=120)
+    host_name: str = Field(default="", max_length=200)
+    engineer_full_name: str = Field(min_length=2, max_length=200)
+    engineer_email: str = Field(min_length=3, max_length=200)
+    temporary_password: str = Field(min_length=6, max_length=200)
+    require_device: bool = True
+    grant_full_access: bool = True
+
+
+class EngineerCreate(BaseModel):
+    full_name: str = Field(min_length=2, max_length=200)
+    email: str = Field(min_length=3, max_length=200)
+    temporary_password: str = Field(min_length=6, max_length=200)
+    device_id: str = Field(default="", max_length=120)
+    host_name: str = Field(default="", max_length=200)
+    grant_full_access: bool = True
+
+
+class PlatformUserCreate(BaseModel):
+    username: str = Field(min_length=2, max_length=120)
+    display_name: str = Field(default="", max_length=200)
+    role: str = Field(min_length=2, max_length=40)
+    password: str = Field(min_length=6, max_length=200)
+    must_change_password: bool = False
+
+
+class PlatformUserUpdate(BaseModel):
+    display_name: str | None = Field(default=None, max_length=200)
+    role: str | None = Field(default=None, max_length=40)
+    password: str | None = Field(default=None, min_length=6, max_length=200)
+
+
+class LicenseActivateRequest(BaseModel):
+    license_key: str = Field(min_length=4, max_length=80)
+    install_password: str = Field(min_length=1, max_length=200)
+    email: str = Field(min_length=3, max_length=200)
+    temporary_password: str = Field(min_length=1, max_length=200)
+    device_id: str = Field(default="", max_length=120)
+    host_name: str = Field(default="", max_length=200)
+
+
+class LicenseLoginRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=200)
+    password: str = Field(min_length=1, max_length=200)
+    license_key: str = Field(default="", max_length=80)
+    device_id: str = Field(default="", max_length=120)
+    host_name: str = Field(default="", max_length=200)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=200)
+    new_password: str = Field(min_length=8, max_length=200)
+
+
 @app.get("/")
 def index() -> FileResponse:
     return FileResponse(settings.frontend_dir / "index.html")
@@ -114,7 +197,7 @@ def health() -> dict[str, str]:
 @app.post("/api/auth/login")
 def auth_login(payload: LoginRequest) -> dict:
     try:
-        with closing(connect(settings.db_path)) as conn:
+        with closing(connect()) as conn:
             return authenticate(conn, payload.username, payload.password)
     except PermissionError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
@@ -124,36 +207,176 @@ def auth_login(payload: LoginRequest) -> dict:
 
 @app.post("/api/auth/logout")
 def auth_logout(authorization: str | None = Header(default=None)) -> dict[str, str]:
-    with closing(connect(settings.db_path)) as conn:
+    with closing(connect()) as conn:
         logout(conn, extract_bearer_token(authorization))
     return {"status": "ok"}
 
 
 @app.get("/api/auth/me")
 def auth_me(authorization: str | None = Header(default=None)) -> dict:
-    with closing(connect(settings.db_path)) as conn:
+    with closing(connect()) as conn:
         user = current_user(conn, extract_bearer_token(authorization))
     if user is None:
         raise HTTPException(status_code=401, detail="Authentication required.")
     return {"user": user}
 
 
+@app.post("/api/auth/change-password")
+def auth_change_password(
+    payload: ChangePasswordRequest,
+    authorization: str | None = Header(default=None),
+) -> dict:
+    try:
+        with closing(connect()) as conn:
+            user = require_user(conn, extract_bearer_token(authorization))
+            return change_engineer_password(
+                conn,
+                user,
+                payload.current_password,
+                payload.new_password,
+            )
+    except PermissionError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/admin/customers")
+def admin_customers_list(authorization: str | None = Header(default=None)) -> dict:
+    require_super_admin_or_403(authorization)
+    with closing(connect()) as conn:
+        return list_customers(conn)
+
+
+@app.post("/api/admin/customers")
+def admin_customers_create(
+    payload: CustomerCreate,
+    authorization: str | None = Header(default=None),
+) -> dict:
+    require_super_admin_or_403(authorization)
+    try:
+        with closing(connect()) as conn:
+            return create_customer(conn, payload.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/admin/customers/{customer_id}")
+def admin_customers_get(customer_id: str, authorization: str | None = Header(default=None)) -> dict:
+    require_super_admin_or_403(authorization)
+    try:
+        with closing(connect()) as conn:
+            return serialize_customer(conn, customer_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/admin/customers/{customer_id}/engineers")
+def admin_customers_add_engineer(
+    customer_id: str,
+    payload: EngineerCreate,
+    authorization: str | None = Header(default=None),
+) -> dict:
+    require_super_admin_or_403(authorization)
+    try:
+        with closing(connect()) as conn:
+            return add_engineer(conn, customer_id, payload.model_dump())
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/admin/users")
+def admin_users_list(authorization: str | None = Header(default=None)) -> dict:
+    require_super_admin_or_403(authorization)
+    with closing(connect()) as conn:
+        return list_platform_users(conn)
+
+
+@app.post("/api/admin/users")
+def admin_users_create(
+    payload: PlatformUserCreate,
+    authorization: str | None = Header(default=None),
+) -> dict:
+    require_super_admin_or_403(authorization)
+    try:
+        with closing(connect()) as conn:
+            return create_platform_user(conn, payload.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.patch("/api/admin/users/{user_id}")
+def admin_users_update(
+    user_id: str,
+    payload: PlatformUserUpdate,
+    authorization: str | None = Header(default=None),
+) -> dict:
+    require_super_admin_or_403(authorization)
+    try:
+        with closing(connect()) as conn:
+            return update_platform_user(
+                conn,
+                user_id,
+                {k: v for k, v in payload.model_dump().items() if v is not None},
+            )
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.delete("/api/admin/users/{user_id}", status_code=204)
+def admin_users_delete(user_id: str, authorization: str | None = Header(default=None)) -> None:
+    require_super_admin_or_403(authorization)
+    try:
+        with closing(connect()) as conn:
+            delete_platform_user(conn, user_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/license/activate")
+def license_activate(payload: LicenseActivateRequest) -> dict:
+    try:
+        with closing(connect()) as conn:
+            return activate_license(conn, payload.model_dump())
+    except PermissionError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/license/login")
+def license_login(payload: LicenseLoginRequest) -> dict:
+    try:
+        with closing(connect()) as conn:
+            return login_engineer(conn, payload.model_dump())
+    except PermissionError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 @app.get("/api/dashboard")
 def dashboard() -> dict:
-    with closing(connect(settings.db_path)) as conn:
+    with closing(connect()) as conn:
         return build_dashboard(conn, settings)
 
 
 @app.get("/api/submissions")
 def submissions_list(status: str | None = None, search: str | None = None) -> dict:
-    with closing(connect(settings.db_path)) as conn:
+    with closing(connect()) as conn:
         return list_submissions(conn, status=status, search=search)
 
 
 @app.post("/api/submissions")
 def submissions_create(payload: SubmissionCreate) -> dict:
     try:
-        with closing(connect(settings.db_path)) as conn:
+        with closing(connect()) as conn:
             return create_submission(conn, settings, payload.model_dump())
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -161,7 +384,7 @@ def submissions_create(payload: SubmissionCreate) -> dict:
 
 @app.get("/api/submissions/{identifier}")
 def submissions_get(identifier: str) -> dict:
-    with closing(connect(settings.db_path)) as conn:
+    with closing(connect()) as conn:
         summary = get_submission(conn, identifier)
     if summary is None:
         raise HTTPException(status_code=404, detail="Submission not found.")
@@ -171,7 +394,7 @@ def submissions_get(identifier: str) -> dict:
 @app.patch("/api/submissions/{identifier}")
 def submissions_patch(identifier: str, payload: SubmissionUpdate) -> dict:
     try:
-        with closing(connect(settings.db_path)) as conn:
+        with closing(connect()) as conn:
             return update_submission(
                 conn,
                 identifier,
@@ -186,7 +409,7 @@ def submissions_patch(identifier: str, payload: SubmissionUpdate) -> dict:
 @app.get("/api/submissions/{identifier}/matrix")
 def submissions_matrix(identifier: str) -> dict:
     try:
-        with closing(connect(settings.db_path)) as conn:
+        with closing(connect()) as conn:
             return document_matrix(conn, settings, identifier)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -226,7 +449,7 @@ def get_rules(
     authorization: str | None = Header(default=None),
 ) -> dict:
     require_super_admin_or_403(authorization)
-    with closing(connect(settings.db_path)) as conn:
+    with closing(connect()) as conn:
         return build_rule_library(conn, standard_id=standard_id)
 
 
@@ -234,7 +457,7 @@ def get_rules(
 def create_rule(payload: RuleCreate, authorization: str | None = Header(default=None)) -> dict:
     require_super_admin_or_403(authorization)
     try:
-        with closing(connect(settings.db_path)) as conn:
+        with closing(connect()) as conn:
             return add_rule(
                 conn,
                 payload.standard_id,
@@ -255,7 +478,7 @@ def edit_rule(
 ) -> dict:
     require_super_admin_or_403(authorization)
     try:
-        with closing(connect(settings.db_path)) as conn:
+        with closing(connect()) as conn:
             return update_rule(
                 conn,
                 rule_key,
@@ -282,7 +505,7 @@ async def upload_case(
         resolved = None
         if case_id:
             resolved = case_id_or_404(case_id)
-        with closing(connect(settings.db_path)) as conn:
+        with closing(connect()) as conn:
             summary = process_uploads(
                 upload_items,
                 settings,
@@ -318,7 +541,7 @@ def validate_case(case_id: str, dry_run: bool = False, elements: str | None = No
             submission_level=summary["case"].get("submission_level"),
             standard_id=standard_id,
         )
-        with closing(connect(settings.db_path)) as conn:
+        with closing(connect()) as conn:
             status = "in_review"
             overall = str((report.get("summary") or {}).get("overall_status") or "").upper()
             missing = (report.get("summary") or {}).get("required_missing_elements") or []
@@ -357,7 +580,7 @@ def get_case_review(case_id: str) -> dict:
     try:
         standard_id = case_or_404(case_id)["case"].get("standard_id") or DEFAULT_STANDARD_ID
         validation = ValidationRunner(settings, standard_id=standard_id).latest_report(case_id)
-        payload = review_payload(settings.db_path, case_id, validation)
+        payload = review_payload(case_id, validation)
         payload["severity"] = severity_summary(validation)
         return payload
     except FileNotFoundError as exc:
@@ -368,7 +591,7 @@ def get_case_review(case_id: str) -> dict:
 def review_rule(case_id: str, rule_key: str, payload: RuleReviewRequest) -> dict:
     case_id = case_id_or_404(case_id)
     try:
-        with closing(connect(settings.db_path)) as conn:
+        with closing(connect()) as conn:
             return save_rule_review(
                 conn,
                 case_id,
@@ -386,7 +609,7 @@ def review_rule(case_id: str, rule_key: str, payload: RuleReviewRequest) -> dict
 @app.delete("/api/cases/{case_id}/review/{rule_key}", status_code=204)
 def reset_rule_review(case_id: str, rule_key: str) -> None:
     case_id = case_id_or_404(case_id)
-    with closing(connect(settings.db_path)) as conn:
+    with closing(connect()) as conn:
         clear_rule_review(conn, case_id, rule_key)
 
 
@@ -397,7 +620,7 @@ def generate_report(case_id: str, use_llm: bool = True) -> dict:
 
     try:
         report = ReportGenerator(settings).generate_from_latest_validation(case_id, use_llm=use_llm)
-        with closing(connect(settings.db_path)) as conn:
+        with closing(connect()) as conn:
             conn.execute("UPDATE cases SET status = ? WHERE case_id = ?", ("in_review", case_id))
             conn.commit()
         return report
@@ -496,7 +719,7 @@ async def stage_uploads(files: list[UploadFile]) -> tuple[Path, list[UploadItem]
 
 
 def case_id_or_404(identifier: str) -> str:
-    with closing(connect(settings.db_path)) as conn:
+    with closing(connect()) as conn:
         case_id = resolve_case_id(conn, identifier)
     if not case_id:
         raise HTTPException(status_code=404, detail="Case not found.")
@@ -504,7 +727,7 @@ def case_id_or_404(identifier: str) -> str:
 
 
 def case_or_404(case_id: str) -> dict:
-    with closing(connect(settings.db_path)) as conn:
+    with closing(connect()) as conn:
         resolved = resolve_case_id(conn, case_id) or str(case_id)
         summary = get_case_summary(conn, resolved)
     if summary is None:
@@ -514,7 +737,7 @@ def case_or_404(case_id: str) -> dict:
 
 def require_super_admin_or_403(authorization: str | None) -> dict:
     try:
-        with closing(connect(settings.db_path)) as conn:
+        with closing(connect()) as conn:
             return require_super_admin(conn, extract_bearer_token(authorization))
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
@@ -530,3 +753,4 @@ def parse_elements(value: str | None) -> list[int] | None:
             status_code=400,
             detail="elements must be a comma-separated list of element numbers.",
         ) from exc
+

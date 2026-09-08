@@ -16,3 +16,8 @@ scheduled_tasks.lock
 
 PPAP_share
 PPAP_share.zip
+
+desktop/build/
+desktop/dist-exe/
+desktop/*.spec
+desktop/api_url.txt

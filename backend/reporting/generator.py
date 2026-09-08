@@ -129,9 +129,9 @@ class ReportGenerator:
         raw_report = self._read_json(validation_path)
         self._use_standard(raw_report.get("summary", {}).get("standard_id"))
         validation_report = apply_rule_reviews(
-            self.settings.db_path,
             case_id,
             raw_report,
+            db_path=self.settings.db_path,
         )
         return self.generate(case_id, validation_report, use_llm=use_llm)
 
@@ -849,6 +849,12 @@ class ReportGenerator:
             )
         self._write_json(report_dir / "overall_report.json", report)
         generate_report_pdf(report, report_dir / report["summary"].get("report_filename", report_filename(self.standard_id)))
+        try:
+            from ..storage import sync_case_to_s3
+
+            sync_case_to_s3(case_id, self.settings)
+        except Exception:
+            pass
 
     def _use_standard(self, standard_id: str | None) -> None:
         standard_id = normalize_standard_id(standard_id or self.standard_id)

@@ -2,13 +2,12 @@
 
 import copy
 import json
-import sqlite3
 from contextlib import closing
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 from .database import connect, init_db, insert_audit_event, next_audit_id
+from .db import DbConnection
 from .standards.profiles import DEFAULT_STANDARD_ID
 
 
@@ -16,7 +15,7 @@ REVIEW_STATUSES = {"PASS", "FLAG", "NOT_FOUND"}
 
 
 def save_rule_review(
-    conn: sqlite3.Connection,
+    conn: DbConnection,
     case_id: str,
     rule_key: str,
     status: str,
@@ -94,7 +93,7 @@ def save_rule_review(
     }
 
 
-def clear_rule_review(conn: sqlite3.Connection, case_id: str, rule_key: str) -> None:
+def clear_rule_review(conn: DbConnection, case_id: str, rule_key: str) -> None:
     conn.execute(
         "DELETE FROM case_rule_reviews WHERE case_id = ? AND rule_key = ?",
         (case_id, rule_key),
@@ -102,8 +101,8 @@ def clear_rule_review(conn: sqlite3.Connection, case_id: str, rule_key: str) -> 
     conn.commit()
 
 
-def review_payload(db_path: Path, case_id: str, validation_report: dict[str, Any]) -> dict[str, Any]:
-    final_report = apply_rule_reviews(db_path, case_id, validation_report)
+def review_payload(case_id: str, validation_report: dict[str, Any], db_path=None) -> dict[str, Any]:
+    final_report = apply_rule_reviews(case_id, validation_report, db_path=db_path)
     elements = []
     for element in final_report.get("element_results", []):
         if (
@@ -134,9 +133,9 @@ def review_payload(db_path: Path, case_id: str, validation_report: dict[str, Any
 
 
 def apply_rule_reviews(
-    db_path: Path,
     case_id: str,
     validation_report: dict[str, Any],
+    db_path=None,
 ) -> dict[str, Any]:
     init_db(db_path)
     with closing(connect(db_path)) as conn:

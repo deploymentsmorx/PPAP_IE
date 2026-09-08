@@ -1,11 +1,10 @@
-# Upload intake, ZIP expansion, and case registration.
+﻿# Upload intake, ZIP expansion, and case registration.
 
 import json
 import logging
 import mimetypes
 import re
 import shutil
-import sqlite3
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -14,8 +13,10 @@ from typing import Any
 
 from ..config import Settings
 from ..database import get_case_summary, insert_audit_event, insert_case, insert_file, next_audit_id, update_case_layout
+from ..db import DbConnection
 from ..extraction.extract import extract_document
 from ..extraction.json_writer import save_json, save_tagging_json
+from ..storage import case_object_key, sync_case_to_s3
 from ..tagging.element_tagger import ElementTagger
 from ..standards.profiles import DEFAULT_STANDARD_ID, normalize_standard_id, standard_display_name
 from .classification import classify_file
@@ -39,7 +40,7 @@ class UploadItem:
 def process_uploads(
     uploads: list[UploadItem],
     app_settings: Settings,
-    conn: sqlite3.Connection,
+    conn: DbConnection,
     submission_level: int = 3,
     standard_id: str = DEFAULT_STANDARD_ID,
     case_id: str | None = None,
@@ -160,6 +161,27 @@ def process_uploads(
     )
 
     summary = get_case_summary(conn, case_id) or {}
+    try:
+        s3_uri = sync_case_to_s3(case_id, app_settings)
+        if s3_uri:
+            prefix = app_settings.s3_case_prefix(case_id)
+            conn.execute(
+                "UPDATE cases SET s3_prefix = ? WHERE case_id = ?",
+                (prefix, case_id),
+            )
+            for file_row in summary.get("files") or []:
+                stored = file_row.get("stored_path") or ""
+                case_root = str(app_settings.case_dir(case_id))
+                if stored.startswith(case_root):
+                    rel = Path(stored).relative_to(app_settings.case_dir(case_id)).as_posix()
+                    key = case_object_key(case_id, rel, app_settings)
+                    conn.execute(
+                        "UPDATE files SET s3_key = ?, stored_path = ? WHERE file_id = ?",
+                        (key, f"s3://{app_settings.s3_bucket}/{key}" if app_settings.s3_enabled else stored, file_row["file_id"]),
+                    )
+            summary = get_case_summary(conn, case_id) or summary
+    except Exception as exc:  # noqa: BLE001 â€” keep intake success if S3 fails temporarily
+        LOGGER.warning("S3 sync after upload failed for %s: %s", case_id, exc)
     conn.commit()
     return summary
 
@@ -250,7 +272,7 @@ def register_zip_contents(
     case_id: str,
     work_case_dir: Path,
     app_settings: Settings,
-    conn: sqlite3.Connection,
+    conn: DbConnection,
     registered_paths: list[str],
     archive_depth: int = 0,
     path_prefix: str = "",
@@ -328,7 +350,7 @@ def register_file(
     relative_path: str,
     source_container: str | None,
     app_settings: Settings,
-    conn: sqlite3.Connection,
+    conn: DbConnection,
     registered_paths: list[str],
     archive_depth: int = 0,
     standard_id: str = DEFAULT_STANDARD_ID,
@@ -435,7 +457,7 @@ def register_ignored_file(
     relative_path: str,
     source_container: str | None,
     size_bytes: int,
-    conn: sqlite3.Connection,
+    conn: DbConnection,
     reason: str,
     archive_depth: int = 0,
 ) -> None:
@@ -622,7 +644,7 @@ def combine_archive_path(path_prefix: str, relative_path: str) -> str:
 
 
 def write_audit(
-    conn: sqlite3.Connection,
+    conn: DbConnection,
     case_id: str,
     event_type: str,
     message: str,
@@ -645,7 +667,7 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def next_case_id(conn: sqlite3.Connection, app_settings: Settings | None = None) -> str:
+def next_case_id(conn: DbConnection, app_settings: Settings | None = None) -> str:
     rows = conn.execute("SELECT case_id FROM cases").fetchall()
     numbers = {int(row["case_id"]) for row in rows if str(row["case_id"]).isdigit()}
     if app_settings and app_settings.cases_dir.exists():
@@ -657,7 +679,7 @@ def next_case_id(conn: sqlite3.Connection, app_settings: Settings | None = None)
     return str(max(numbers, default=0) + 1)
 
 
-def next_file_id(conn: sqlite3.Connection, case_id: str) -> str:
+def next_file_id(conn: DbConnection, case_id: str) -> str:
     row = conn.execute(
         "SELECT COUNT(*) AS count FROM files WHERE case_id = ?",
         (case_id,),

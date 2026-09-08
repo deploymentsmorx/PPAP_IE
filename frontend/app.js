@@ -29,7 +29,9 @@ const dom = {
     create: $("#create-view"),
     workspace: $("#workspace-view"),
     report: $("#report-view"),
-    rules: $("#rules-view")
+    rules: $("#rules-view"),
+    customers: $("#customers-view"),
+    users: $("#users-view")
   },
   navButtons: $$(".nav-button[data-view]"),
   greeting: $("#dashboard-greeting"),
@@ -114,6 +116,7 @@ const dom = {
   appShell: $("#app-shell"),
   rulesNavGroup: $("#rules-nav-group"),
   reportsNavGroup: $("#reports-nav-group"),
+  adminNavGroup: $("#admin-nav-group"),
   sessionUser: $("#session-user"),
   logoutButton: $("#logout-button")
 };
@@ -164,6 +167,7 @@ function clearSession() {
   localStorage.removeItem(AUTH_TOKEN_KEY);
   if (dom.rulesNavGroup) dom.rulesNavGroup.hidden = true;
   if (dom.reportsNavGroup) dom.reportsNavGroup.hidden = true;
+  if (dom.adminNavGroup) dom.adminNavGroup.hidden = true;
   $$(".create-only, .quality-only").forEach((node) => {
     node.hidden = false;
   });
@@ -181,6 +185,7 @@ function applyRoleVisibility() {
   const perms = permissions();
   if (dom.rulesNavGroup) dom.rulesNavGroup.hidden = !perms.rules;
   if (dom.reportsNavGroup) dom.reportsNavGroup.hidden = !perms.quality;
+  if (dom.adminNavGroup) dom.adminNavGroup.hidden = !isSuperAdmin();
 
   $$(".create-only").forEach((node) => {
     node.hidden = !perms.create;
@@ -205,6 +210,9 @@ function applyRoleVisibility() {
     showView("dashboard");
   }
   if (!perms.create && !dom.views.create.hidden) {
+    showView("dashboard");
+  }
+  if (!isSuperAdmin() && ((dom.views.customers && !dom.views.customers.hidden) || (dom.views.users && !dom.views.users.hidden))) {
     showView("dashboard");
   }
 }
@@ -329,6 +337,20 @@ function bindShell() {
           return;
         }
         showView("report");
+      } else if (view === "customers") {
+        if (!isSuperAdmin()) {
+          showView("dashboard");
+          return;
+        }
+        showView("customers");
+        await loadCustomers();
+      } else if (view === "users") {
+        if (!isSuperAdmin()) {
+          showView("dashboard");
+          return;
+        }
+        showView("users");
+        await loadPlatformUsers();
       } else if (view === "dashboard") {
         showView("dashboard");
         await loadDashboard();
@@ -367,6 +389,13 @@ function bindShell() {
   }
   if (dom.cancelRule) dom.cancelRule.addEventListener("click", closeRuleEditor);
   if (dom.ruleForm) dom.ruleForm.addEventListener("submit", saveRule);
+
+  const customerForm = $("#customer-form");
+  if (customerForm) customerForm.addEventListener("submit", createCustomer);
+  const engineerForm = $("#engineer-form");
+  if (engineerForm) engineerForm.addEventListener("submit", addEngineer);
+  const platformUserForm = $("#platform-user-form");
+  if (platformUserForm) platformUserForm.addEventListener("submit", createPlatformUser);
 }
 
 async function loadDashboard() {
@@ -1170,6 +1199,155 @@ function showView(name) {
     const matchFilter = name !== "submissions" || (button.dataset.filter || "all") === state.submissionFilter;
     button.classList.toggle("active", matchView && matchFilter);
   });
+}
+
+async function loadCustomers() {
+  const list = $("#customers-list");
+  if (!list) return;
+  list.innerHTML = "<p>Loading...</p>";
+  try {
+    const data = await api("/api/admin/customers");
+    if (!data.items?.length) {
+      list.innerHTML = "<p>No licensed customers yet.</p>";
+      return;
+    }
+    list.innerHTML = data.items.map((item) => `
+      <article class="admin-card">
+        <header>
+          <strong>${esc(item.company_name)}</strong>
+          <code>${esc(item.license_key)}</code>
+        </header>
+        <p>Device: ${esc(item.device_id || "—")} · Host: ${esc(item.host_name || "—")} · Require device: ${item.require_device ? "ON" : "OFF"}</p>
+        <p>Engineers: ${(item.engineers || []).map((e) => esc(e.email)).join(", ") || "—"}</p>
+        <button type="button" class="button-secondary" data-add-eng="${esc(item.customer_id)}">Add engineer</button>
+      </article>
+    `).join("");
+    list.querySelectorAll("[data-add-eng]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const panel = $("#engineer-panel");
+        const idInput = $("#eng-customer-id");
+        if (panel) panel.hidden = false;
+        if (idInput) idInput.value = btn.dataset.addEng;
+      });
+    });
+  } catch (error) {
+    list.innerHTML = `<p class="status-error">${esc(error.message)}</p>`;
+  }
+}
+
+async function createCustomer(event) {
+  event.preventDefault();
+  const status = $("#customer-form-status");
+  const creds = $("#customer-credentials");
+  status.textContent = "Saving...";
+  status.className = "form-status";
+  try {
+    const payload = await api("/api/admin/customers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        company_name: $("#cust-company").value.trim(),
+        license_key: $("#cust-license").value.trim(),
+        install_password: $("#cust-install-password").value,
+        device_id: $("#cust-device").value.trim(),
+        host_name: $("#cust-host").value.trim(),
+        engineer_full_name: $("#cust-eng-name").value.trim(),
+        engineer_email: $("#cust-eng-email").value.trim(),
+        temporary_password: $("#cust-temp-password").value,
+        require_device: $("#cust-require-device").checked,
+        grant_full_access: $("#cust-grant-full").checked
+      })
+    });
+    status.textContent = "Customer saved.";
+    status.className = "form-status status-ok";
+    if (creds && payload.credentials) {
+      const c = payload.credentials;
+      creds.hidden = false;
+      creds.innerHTML = `
+        <h3>Send to customer</h3>
+        <p><strong>License key:</strong> <code>${esc(c.license_key)}</code></p>
+        <p><strong>Install password:</strong> <code>${esc(c.install_password)}</code></p>
+        <p><strong>Email:</strong> <code>${esc(c.email)}</code></p>
+        <p><strong>Temporary password:</strong> <code>${esc(c.temporary_password)}</code></p>
+      `;
+    }
+    event.target.reset();
+    $("#cust-require-device").checked = true;
+    $("#cust-grant-full").checked = true;
+    await loadCustomers();
+  } catch (error) {
+    status.textContent = error.message;
+    status.className = "form-status status-error";
+  }
+}
+
+async function addEngineer(event) {
+  event.preventDefault();
+  const status = $("#engineer-form-status");
+  const customerId = $("#eng-customer-id").value;
+  status.textContent = "Saving...";
+  try {
+    await api(`/api/admin/customers/${encodeURIComponent(customerId)}/engineers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        full_name: $("#eng-name").value.trim(),
+        email: $("#eng-email").value.trim(),
+        temporary_password: $("#eng-temp").value,
+        device_id: $("#eng-device").value.trim(),
+        host_name: $("#eng-host").value.trim(),
+        grant_full_access: true
+      })
+    });
+    status.textContent = "Engineer added.";
+    event.target.reset();
+    $("#eng-customer-id").value = customerId;
+    await loadCustomers();
+  } catch (error) {
+    status.textContent = error.message;
+    status.className = "form-status status-error";
+  }
+}
+
+async function loadPlatformUsers() {
+  const list = $("#platform-users-list");
+  if (!list) return;
+  list.innerHTML = "<p>Loading...</p>";
+  try {
+    const data = await api("/api/admin/users");
+    list.innerHTML = (data.items || []).map((user) => `
+      <article class="admin-card">
+        <header><strong>${esc(user.display_name || user.username)}</strong><span>${esc(user.role_label || user.role)}</span></header>
+        <p>@${esc(user.username)}</p>
+      </article>
+    `).join("") || "<p>No users.</p>";
+  } catch (error) {
+    list.innerHTML = `<p class="status-error">${esc(error.message)}</p>`;
+  }
+}
+
+async function createPlatformUser(event) {
+  event.preventDefault();
+  const status = $("#platform-user-status");
+  status.textContent = "Saving...";
+  try {
+    await api("/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: $("#pu-username").value.trim(),
+        display_name: $("#pu-display").value.trim(),
+        role: $("#pu-role").value,
+        password: $("#pu-password").value
+      })
+    });
+    status.textContent = "User saved.";
+    event.target.reset();
+    await loadPlatformUsers();
+  } catch (error) {
+    status.textContent = error.message;
+    status.className = "form-status status-error";
+  }
 }
 
 function showPanel(name) {

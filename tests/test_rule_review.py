@@ -113,7 +113,7 @@ class RuleAndReviewTests(unittest.TestCase):
                 }
             ],
         }
-        merged = apply_rule_reviews(self.settings.db_path, "case-review", validation)
+        merged = apply_rule_reviews("case-review", validation, db_path=self.settings.db_path)
         checkpoint = merged["element_results"][0]["checkpoint_results"][0]
         self.assertEqual(checkpoint["status"], "FLAG")
         self.assertEqual(checkpoint["final_decision_source"], "HUMAN")

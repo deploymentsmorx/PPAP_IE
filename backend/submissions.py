@@ -83,6 +83,7 @@ def create_submission(conn, app_settings: Settings, payload: dict[str, Any]) -> 
         "work_dir": str(work_case_dir),
         "status": "draft",
         "ppap_id": ppap_id,
+        "s3_prefix": app_settings.s3_case_prefix(case_id),
         "customer_name": payload["customer_name"],
         "part_number": payload["part_number"],
         "part_name": payload["part_name"],

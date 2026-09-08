@@ -1,11 +1,13 @@
-# SQLite schema and small persistence helpers.
+# Schema and persistence helpers (Postgres / SQLite via db.connect).
 
-import sqlite3
+from __future__ import annotations
+
 from pathlib import Path
 from typing import Any
 
+from .db import DbConnection, connect
 
-SCHEMA = """
+SCHEMA_SQLITE = """
 CREATE TABLE IF NOT EXISTS cases (
     case_id TEXT PRIMARY KEY,
     created_at TEXT NOT NULL,
@@ -26,7 +28,8 @@ CREATE TABLE IF NOT EXISTS cases (
     supplier_name TEXT NOT NULL DEFAULT '',
     program_name TEXT NOT NULL DEFAULT '',
     submission_date TEXT NOT NULL DEFAULT '',
-    due_date TEXT NOT NULL DEFAULT ''
+    due_date TEXT NOT NULL DEFAULT '',
+    s3_prefix TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS files (
@@ -53,6 +56,7 @@ CREATE TABLE IF NOT EXISTS files (
     ignored INTEGER NOT NULL DEFAULT 0,
     ignore_reason TEXT,
     processing_status TEXT NOT NULL,
+    s3_key TEXT,
     FOREIGN KEY (case_id) REFERENCES cases(case_id)
 );
 
@@ -102,7 +106,10 @@ CREATE TABLE IF NOT EXISTS users (
     role TEXT NOT NULL,
     password_salt TEXT NOT NULL,
     password_hash TEXT NOT NULL,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    must_change_password INTEGER NOT NULL DEFAULT 0,
+    customer_id TEXT,
+    user_kind TEXT NOT NULL DEFAULT 'platform'
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
@@ -112,23 +119,186 @@ CREATE TABLE IF NOT EXISTS sessions (
     expires_at TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+
+CREATE TABLE IF NOT EXISTS customers (
+    customer_id TEXT PRIMARY KEY,
+    company_name TEXT NOT NULL,
+    license_key TEXT NOT NULL UNIQUE,
+    install_password_salt TEXT NOT NULL,
+    install_password_hash TEXT NOT NULL,
+    device_id TEXT NOT NULL DEFAULT '',
+    host_name TEXT NOT NULL DEFAULT '',
+    require_device INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS customer_engineers (
+    engineer_id TEXT PRIMARY KEY,
+    customer_id TEXT NOT NULL,
+    full_name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    password_salt TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    device_id TEXT NOT NULL DEFAULT '',
+    host_name TEXT NOT NULL DEFAULT '',
+    grant_full_access INTEGER NOT NULL DEFAULT 1,
+    must_change_password INTEGER NOT NULL DEFAULT 1,
+    activated INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    UNIQUE (customer_id, email),
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+);
+"""
+
+SCHEMA_POSTGRES = """
+CREATE TABLE IF NOT EXISTS cases (
+    case_id TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    standard_id TEXT NOT NULL DEFAULT 'aiag_ppap',
+    source_type TEXT NOT NULL,
+    source_names TEXT NOT NULL,
+    submission_level INTEGER NOT NULL DEFAULT 3,
+    layout_type TEXT NOT NULL DEFAULT 'unknown',
+    layout_confidence DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    raw_dir TEXT NOT NULL,
+    work_dir TEXT NOT NULL,
+    status TEXT NOT NULL,
+    ppap_id TEXT,
+    customer_name TEXT NOT NULL DEFAULT '',
+    part_number TEXT NOT NULL DEFAULT '',
+    part_name TEXT NOT NULL DEFAULT '',
+    part_revision TEXT NOT NULL DEFAULT '',
+    supplier_name TEXT NOT NULL DEFAULT '',
+    program_name TEXT NOT NULL DEFAULT '',
+    submission_date TEXT NOT NULL DEFAULT '',
+    due_date TEXT NOT NULL DEFAULT '',
+    s3_prefix TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS files (
+    file_id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL REFERENCES cases(case_id),
+    created_at TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    relative_path TEXT NOT NULL,
+    stored_path TEXT,
+    source_container TEXT,
+    extension TEXT NOT NULL,
+    mime_type TEXT,
+    detected_type TEXT NOT NULL DEFAULT 'unknown',
+    type_confidence DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    routing_lane TEXT NOT NULL DEFAULT 'unknown',
+    digital_status TEXT NOT NULL DEFAULT 'not_applicable',
+    unit_count INTEGER,
+    unit_label TEXT,
+    archive_depth INTEGER NOT NULL DEFAULT 0,
+    size_bytes INTEGER NOT NULL,
+    sha256 TEXT,
+    is_duplicate INTEGER NOT NULL DEFAULT 0,
+    duplicate_of TEXT,
+    ignored INTEGER NOT NULL DEFAULT 0,
+    ignore_reason TEXT,
+    processing_status TEXT NOT NULL,
+    s3_key TEXT
+);
+
+CREATE TABLE IF NOT EXISTS audit_log (
+    event_id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL REFERENCES cases(case_id),
+    created_at TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    message TEXT NOT NULL,
+    details_json TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS validation_rules (
+    rule_key TEXT PRIMARY KEY,
+    standard_id TEXT NOT NULL DEFAULT 'aiag_ppap',
+    element_number INTEGER NOT NULL,
+    rule_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    description TEXT NOT NULL,
+    related_elements_json TEXT NOT NULL DEFAULT '[]',
+    enabled INTEGER NOT NULL DEFAULT 1,
+    is_custom INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (standard_id, element_number, rule_id)
+);
+
+CREATE TABLE IF NOT EXISTS case_rule_reviews (
+    case_id TEXT NOT NULL REFERENCES cases(case_id),
+    standard_id TEXT NOT NULL DEFAULT 'aiag_ppap',
+    rule_key TEXT NOT NULL REFERENCES validation_rules(rule_key),
+    element_number INTEGER NOT NULL,
+    status TEXT NOT NULL,
+    remark TEXT NOT NULL,
+    evidence_location TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (case_id, standard_id, rule_key)
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    user_id TEXT PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    display_name TEXT NOT NULL DEFAULT '',
+    role TEXT NOT NULL,
+    password_salt TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    must_change_password INTEGER NOT NULL DEFAULT 0,
+    customer_id TEXT,
+    user_kind TEXT NOT NULL DEFAULT 'platform'
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+    token TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(user_id),
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS customers (
+    customer_id TEXT PRIMARY KEY,
+    company_name TEXT NOT NULL,
+    license_key TEXT NOT NULL UNIQUE,
+    install_password_salt TEXT NOT NULL,
+    install_password_hash TEXT NOT NULL,
+    device_id TEXT NOT NULL DEFAULT '',
+    host_name TEXT NOT NULL DEFAULT '',
+    require_device INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS customer_engineers (
+    engineer_id TEXT PRIMARY KEY,
+    customer_id TEXT NOT NULL REFERENCES customers(customer_id),
+    full_name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    password_salt TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    device_id TEXT NOT NULL DEFAULT '',
+    host_name TEXT NOT NULL DEFAULT '',
+    grant_full_access INTEGER NOT NULL DEFAULT 1,
+    must_change_password INTEGER NOT NULL DEFAULT 1,
+    activated INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    UNIQUE (customer_id, email)
+);
 """
 
 
-def connect(db_path: Path) -> sqlite3.Connection:
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
-
-
-def init_db(db_path: Path) -> None:
+def init_db(db_path: Path | None = None) -> None:
     from .auth import ensure_auth_tables
 
     conn = connect(db_path)
     try:
-        conn.executescript(SCHEMA)
+        if conn.backend == "postgres":
+            conn.executescript(SCHEMA_POSTGRES)
+        else:
+            conn.executescript(SCHEMA_SQLITE)
         run_migrations(conn)
         ensure_auth_tables(conn)
         conn.commit()
@@ -136,11 +306,11 @@ def init_db(db_path: Path) -> None:
         conn.close()
 
 
-def run_migrations(conn: sqlite3.Connection) -> None:
+def run_migrations(conn: DbConnection) -> None:
     ensure_column(conn, "cases", "standard_id", "TEXT NOT NULL DEFAULT 'aiag_ppap'")
     ensure_column(conn, "cases", "submission_level", "INTEGER NOT NULL DEFAULT 3")
     ensure_column(conn, "cases", "layout_type", "TEXT NOT NULL DEFAULT 'unknown'")
-    ensure_column(conn, "cases", "layout_confidence", "REAL NOT NULL DEFAULT 0.0")
+    ensure_column(conn, "cases", "layout_confidence", "DOUBLE PRECISION NOT NULL DEFAULT 0.0" if conn.backend == "postgres" else "REAL NOT NULL DEFAULT 0.0")
     ensure_column(conn, "cases", "ppap_id", "TEXT")
     ensure_column(conn, "cases", "customer_name", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "cases", "part_number", "TEXT NOT NULL DEFAULT ''")
@@ -150,21 +320,24 @@ def run_migrations(conn: sqlite3.Connection) -> None:
     ensure_column(conn, "cases", "program_name", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "cases", "submission_date", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "cases", "due_date", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(conn, "cases", "s3_prefix", "TEXT NOT NULL DEFAULT ''")
     ensure_column(conn, "files", "detected_type", "TEXT NOT NULL DEFAULT 'unknown'")
-    ensure_column(conn, "files", "type_confidence", "REAL NOT NULL DEFAULT 0.0")
+    ensure_column(conn, "files", "type_confidence", "DOUBLE PRECISION NOT NULL DEFAULT 0.0" if conn.backend == "postgres" else "REAL NOT NULL DEFAULT 0.0")
     ensure_column(conn, "files", "routing_lane", "TEXT NOT NULL DEFAULT 'unknown'")
     ensure_column(conn, "files", "digital_status", "TEXT NOT NULL DEFAULT 'not_applicable'")
     ensure_column(conn, "files", "unit_count", "INTEGER")
     ensure_column(conn, "files", "unit_label", "TEXT")
     ensure_column(conn, "files", "archive_depth", "INTEGER NOT NULL DEFAULT 0")
-    rebuild_validation_rules_if_needed(conn)
+    ensure_column(conn, "files", "s3_key", "TEXT")
+    ensure_column(conn, "users", "must_change_password", "INTEGER NOT NULL DEFAULT 0")
+    ensure_column(conn, "users", "customer_id", "TEXT")
+    ensure_column(conn, "users", "user_kind", "TEXT NOT NULL DEFAULT 'platform'")
     ensure_column(conn, "case_rule_reviews", "standard_id", "TEXT NOT NULL DEFAULT 'aiag_ppap'")
-    rebuild_case_rule_reviews_if_needed(conn)
     backfill_ppap_ids(conn)
     normalize_legacy_statuses(conn)
 
 
-def backfill_ppap_ids(conn: sqlite3.Connection) -> None:
+def backfill_ppap_ids(conn: DbConnection) -> None:
     rows = conn.execute(
         "SELECT case_id, created_at, ppap_id FROM cases ORDER BY created_at, case_id"
     ).fetchall()
@@ -191,7 +364,7 @@ def backfill_ppap_ids(conn: sqlite3.Connection) -> None:
         )
 
 
-def normalize_legacy_statuses(conn: sqlite3.Connection) -> None:
+def normalize_legacy_statuses(conn: DbConnection) -> None:
     mapping = {
         "registered": "draft",
         "processing": "in_review",
@@ -206,142 +379,27 @@ def normalize_legacy_statuses(conn: sqlite3.Connection) -> None:
         conn.execute("UPDATE cases SET status = ? WHERE LOWER(status) = ?", (new, old))
 
 
-def ensure_column(conn: sqlite3.Connection, table_name: str, column_name: str, definition: str) -> None:
+def ensure_column(conn: DbConnection, table_name: str, column_name: str, definition: str) -> None:
+    if conn.backend == "postgres":
+        row = conn.execute(
+            """
+            SELECT 1 AS present
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = ? AND column_name = ?
+            """,
+            (table_name, column_name),
+        ).fetchone()
+        if row:
+            return
+        conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {definition}")
+        return
     columns = conn.execute(f"PRAGMA table_info({table_name})").fetchall()
     if any(column["name"] == column_name for column in columns):
         return
     conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {definition}")
 
 
-def rebuild_validation_rules_if_needed(conn: sqlite3.Connection) -> None:
-    columns = conn.execute("PRAGMA table_info(validation_rules)").fetchall()
-    if not columns:
-        return
-    if not any(column["name"] == "standard_id" for column in columns):
-        conn.execute("ALTER TABLE validation_rules ADD COLUMN standard_id TEXT NOT NULL DEFAULT 'aiag_ppap'")
-
-    indexes = conn.execute("PRAGMA index_list(validation_rules)").fetchall()
-    has_standard_unique = False
-    for index in indexes:
-        if not index["unique"]:
-            continue
-        fields = [
-            row["name"]
-            for row in conn.execute(f"PRAGMA index_info({index['name']})").fetchall()
-        ]
-        if fields == ["standard_id", "element_number", "rule_id"]:
-            has_standard_unique = True
-            break
-    if has_standard_unique:
-        return
-
-    conn.execute("PRAGMA foreign_keys = OFF")
-    try:
-        conn.execute("ALTER TABLE validation_rules RENAME TO validation_rules_old")
-        conn.execute(
-            """
-            CREATE TABLE validation_rules (
-                rule_key TEXT PRIMARY KEY,
-                standard_id TEXT NOT NULL DEFAULT 'aiag_ppap',
-                element_number INTEGER NOT NULL,
-                rule_id TEXT NOT NULL,
-                position INTEGER NOT NULL,
-                description TEXT NOT NULL,
-                related_elements_json TEXT NOT NULL DEFAULT '[]',
-                enabled INTEGER NOT NULL DEFAULT 1,
-                is_custom INTEGER NOT NULL DEFAULT 0,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                UNIQUE (standard_id, element_number, rule_id)
-            )
-            """
-        )
-        conn.execute(
-            """
-            INSERT OR IGNORE INTO validation_rules (
-                rule_key, standard_id, element_number, rule_id, position, description,
-                related_elements_json, enabled, is_custom, created_at, updated_at
-            )
-            SELECT
-                rule_key, COALESCE(standard_id, 'aiag_ppap'), element_number, rule_id,
-                position, description, related_elements_json, enabled, is_custom,
-                created_at, updated_at
-            FROM validation_rules_old
-            """
-        )
-        conn.execute("DROP TABLE validation_rules_old")
-    finally:
-        conn.execute("PRAGMA foreign_keys = ON")
-
-
-def rebuild_case_rule_reviews_if_needed(conn: sqlite3.Connection) -> None:
-    columns = conn.execute("PRAGMA table_info(case_rule_reviews)").fetchall()
-    if not columns:
-        return
-
-    pk_columns = [
-        column["name"]
-        for column in sorted(
-            (column for column in columns if column["pk"]),
-            key=lambda column: column["pk"],
-        )
-    ]
-    foreign_keys = conn.execute("PRAGMA foreign_key_list(case_rule_reviews)").fetchall()
-    rule_fk_tables = [
-        row["table"]
-        for row in foreign_keys
-        if row["from"] == "rule_key"
-    ]
-    has_current_rule_fk = rule_fk_tables == ["validation_rules"]
-    has_standard_primary_key = pk_columns == ["case_id", "standard_id", "rule_key"]
-    if has_current_rule_fk and has_standard_primary_key:
-        return
-
-    conn.execute("PRAGMA foreign_keys = OFF")
-    try:
-        conn.execute("ALTER TABLE case_rule_reviews RENAME TO case_rule_reviews_old")
-        conn.execute(
-            """
-            CREATE TABLE case_rule_reviews (
-                case_id TEXT NOT NULL,
-                standard_id TEXT NOT NULL DEFAULT 'aiag_ppap',
-                rule_key TEXT NOT NULL,
-                element_number INTEGER NOT NULL,
-                status TEXT NOT NULL,
-                remark TEXT NOT NULL,
-                evidence_location TEXT NOT NULL DEFAULT '',
-                updated_at TEXT NOT NULL,
-                PRIMARY KEY (case_id, standard_id, rule_key),
-                FOREIGN KEY (case_id) REFERENCES cases(case_id),
-                FOREIGN KEY (rule_key) REFERENCES validation_rules(rule_key)
-            )
-            """
-        )
-        conn.execute(
-            """
-            INSERT OR IGNORE INTO case_rule_reviews (
-                case_id, standard_id, rule_key, element_number, status, remark, evidence_location, updated_at
-            )
-            SELECT
-                old.case_id,
-                COALESCE(old.standard_id, rules.standard_id, 'aiag_ppap'),
-                old.rule_key,
-                old.element_number,
-                old.status,
-                old.remark,
-                old.evidence_location,
-                old.updated_at
-            FROM case_rule_reviews_old AS old
-            JOIN cases ON cases.case_id = old.case_id
-            JOIN validation_rules AS rules ON rules.rule_key = old.rule_key
-            """
-        )
-        conn.execute("DROP TABLE case_rule_reviews_old")
-    finally:
-        conn.execute("PRAGMA foreign_keys = ON")
-
-
-def insert_case(conn: sqlite3.Connection, record: dict[str, Any]) -> None:
+def insert_case(conn: DbConnection, record: dict[str, Any]) -> None:
     record = {
         "standard_id": "aiag_ppap",
         "ppap_id": None,
@@ -353,6 +411,7 @@ def insert_case(conn: sqlite3.Connection, record: dict[str, Any]) -> None:
         "program_name": "",
         "submission_date": "",
         "due_date": "",
+        "s3_prefix": "",
         **record,
     }
     conn.execute(
@@ -361,20 +420,22 @@ def insert_case(conn: sqlite3.Connection, record: dict[str, Any]) -> None:
             case_id, created_at, standard_id, source_type, source_names, submission_level,
             layout_type, layout_confidence, raw_dir, work_dir, status,
             ppap_id, customer_name, part_number, part_name, part_revision, supplier_name,
-            program_name, submission_date, due_date
+            program_name, submission_date, due_date, s3_prefix
         )
         VALUES (
             :case_id, :created_at, :standard_id, :source_type, :source_names, :submission_level,
             :layout_type, :layout_confidence, :raw_dir, :work_dir, :status,
             :ppap_id, :customer_name, :part_number, :part_name, :part_revision, :supplier_name,
-            :program_name, :submission_date, :due_date
+            :program_name, :submission_date, :due_date, :s3_prefix
         )
         """,
         record,
     )
 
 
-def insert_file(conn: sqlite3.Connection, record: dict[str, Any]) -> None:
+def insert_file(conn: DbConnection, record: dict[str, Any]) -> None:
+    record = {**record}
+    record.setdefault("s3_key", None)
     conn.execute(
         """
         INSERT INTO files (
@@ -382,21 +443,21 @@ def insert_file(conn: sqlite3.Connection, record: dict[str, Any]) -> None:
             source_container, extension, mime_type, detected_type, type_confidence,
             routing_lane, digital_status, unit_count, unit_label, archive_depth,
             size_bytes, sha256,
-            is_duplicate, duplicate_of, ignored, ignore_reason, processing_status
+            is_duplicate, duplicate_of, ignored, ignore_reason, processing_status, s3_key
         )
         VALUES (
             :file_id, :case_id, :created_at, :filename, :relative_path, :stored_path,
             :source_container, :extension, :mime_type, :detected_type, :type_confidence,
             :routing_lane, :digital_status, :unit_count, :unit_label, :archive_depth,
             :size_bytes, :sha256,
-            :is_duplicate, :duplicate_of, :ignored, :ignore_reason, :processing_status
+            :is_duplicate, :duplicate_of, :ignored, :ignore_reason, :processing_status, :s3_key
         )
         """,
         record,
     )
 
 
-def update_case_layout(conn: sqlite3.Connection, case_id: str, layout_type: str, layout_confidence: float) -> None:
+def update_case_layout(conn: DbConnection, case_id: str, layout_type: str, layout_confidence: float) -> None:
     conn.execute(
         """
         UPDATE cases
@@ -407,7 +468,7 @@ def update_case_layout(conn: sqlite3.Connection, case_id: str, layout_type: str,
     )
 
 
-def insert_audit_event(conn: sqlite3.Connection, record: dict[str, Any]) -> None:
+def insert_audit_event(conn: DbConnection, record: dict[str, Any]) -> None:
     conn.execute(
         """
         INSERT INTO audit_log (
@@ -421,7 +482,7 @@ def insert_audit_event(conn: sqlite3.Connection, record: dict[str, Any]) -> None
     )
 
 
-def next_audit_id(conn: sqlite3.Connection, case_id: str) -> str:
+def next_audit_id(conn: DbConnection, case_id: str) -> str:
     row = conn.execute(
         "SELECT COUNT(*) AS count FROM audit_log WHERE case_id = ?",
         (case_id,),
@@ -429,7 +490,7 @@ def next_audit_id(conn: sqlite3.Connection, case_id: str) -> str:
     return f"{case_id}-event-{int(row['count']) + 1:03d}"
 
 
-def get_case_summary(conn: sqlite3.Connection, case_id: str) -> dict[str, Any] | None:
+def get_case_summary(conn: DbConnection, case_id: str) -> dict[str, Any] | None:
     case_row = conn.execute(
         "SELECT * FROM cases WHERE case_id = ?",
         (case_id,),

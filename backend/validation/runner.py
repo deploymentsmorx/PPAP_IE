@@ -57,7 +57,7 @@ class ValidationRunner:
         self.standard_id = normalize_standard_id(standard_id)
         self.profile = standard_profile(self.standard_id)
         self.settings = settings
-        self.catalog = catalog or configured_catalog(settings.db_path, standard_id=self.standard_id)
+        self.catalog = catalog or configured_catalog(standard_id=self.standard_id)
         self.prompt_builder = prompt_builder or ValidationPromptBuilder()
         self.llm_client = llm_client or OpenAIJsonClient()
         self.evidence_builder = EvidenceBuilder(settings.cases_dir)
@@ -84,6 +84,10 @@ class ValidationRunner:
                 prompt_builder=self.prompt_builder,
                 standard_id=standard_id,
             ).validate_case(case_id, dry_run, elements, submission_level)
+
+        from ..storage import ensure_case_local, sync_case_to_s3
+
+        ensure_case_local(case_id, self.settings)
 
         run_id = uuid.uuid4().hex
         run_dir = self._run_dir(case_id)
@@ -123,9 +127,16 @@ class ValidationRunner:
         )
         self._write_json(run_dir / "validation_report.json", report)
         self._write_json(run_dir / "summary.json", report["summary"])
+        try:
+            sync_case_to_s3(case_id, self.settings)
+        except Exception:
+            pass
         return report
 
     def latest_report(self, case_id: str) -> dict[str, Any]:
+        from ..storage import ensure_case_local
+
+        ensure_case_local(case_id, self.settings)
         path = self._run_dir(case_id) / "validation_report.json"
         if not path.exists():
             raise FileNotFoundError(f"Validation report not found for case: {case_id}")

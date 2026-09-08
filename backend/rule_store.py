@@ -3,14 +3,13 @@
 import copy
 import json
 import re
-import sqlite3
 import uuid
 from contextlib import closing
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any, TYPE_CHECKING
 
 from .database import connect, init_db
+from .db import DbConnection
 from .standards.profiles import DEFAULT_STANDARD_ID, artifact_prefix, normalize_standard_id, standard_display_name
 
 if TYPE_CHECKING:
@@ -40,7 +39,7 @@ ELEMENT_SHORT_CODES = {
 
 
 def configured_catalog(
-    db_path: Path,
+    db_path=None,
     source: "CheckpointCatalog | None" = None,
     standard_id: str = DEFAULT_STANDARD_ID,
 ) -> "CheckpointCatalog":
@@ -54,7 +53,7 @@ def configured_catalog(
 
 
 def build_rule_library(
-    conn: sqlite3.Connection,
+    conn: DbConnection,
     source: "CheckpointCatalog | None" = None,
     standard_id: str = DEFAULT_STANDARD_ID,
 ) -> dict[str, Any]:
@@ -97,7 +96,7 @@ def build_rule_library(
 
 
 def sync_rule_catalog(
-    conn: sqlite3.Connection,
+    conn: DbConnection,
     catalog: "CheckpointCatalog | None" = None,
     standard_id: str = DEFAULT_STANDARD_ID,
 ) -> None:
@@ -130,7 +129,7 @@ def sync_rule_catalog(
     conn.commit()
 
 
-def list_rule_rows(conn: sqlite3.Connection, include_disabled: bool, standard_id: str) -> list[sqlite3.Row]:
+def list_rule_rows(conn: DbConnection, include_disabled: bool, standard_id: str) -> list[dict[str, Any]]:
     standard_id = normalize_standard_id(standard_id)
     extra = "" if include_disabled else "AND enabled = 1"
     return conn.execute(
@@ -145,7 +144,7 @@ def list_rule_rows(conn: sqlite3.Connection, include_disabled: bool, standard_id
 
 
 def add_rule(
-    conn: sqlite3.Connection,
+    conn: DbConnection,
     standard_id: str,
     element_number: int,
     description: str,
@@ -197,7 +196,7 @@ def add_rule(
 
 
 def update_rule(
-    conn: sqlite3.Connection,
+    conn: DbConnection,
     rule_key: str,
     description: str,
     related_elements: list[int],
@@ -224,7 +223,7 @@ def update_rule(
     return _public_rule(_get_rule_row(conn, rule_key))
 
 
-def _catalog_from_rows(catalog: "CheckpointCatalog", rows: list[sqlite3.Row]) -> "CheckpointCatalog":
+def _catalog_from_rows(catalog: "CheckpointCatalog", rows: list[dict[str, Any]]) -> "CheckpointCatalog":
     configured = copy.deepcopy(catalog)
     by_element: dict[int, list[dict[str, Any]]] = {number: [] for number in configured.elements}
     for row in rows:
@@ -244,7 +243,7 @@ def _catalog_from_rows(catalog: "CheckpointCatalog", rows: list[sqlite3.Row]) ->
     return configured
 
 
-def _public_rule(row: sqlite3.Row) -> dict[str, Any]:
+def _public_rule(row: dict[str, Any]) -> dict[str, Any]:
     return {
         "rule_key": row["rule_key"],
         "standard_id": row["standard_id"],
@@ -263,7 +262,7 @@ def _default_catalog(standard_id: str = DEFAULT_STANDARD_ID) -> "CheckpointCatal
     return CheckpointCatalog(standard_id=standard_id)
 
 
-def _get_rule_row(conn: sqlite3.Connection, rule_key: str) -> sqlite3.Row:
+def _get_rule_row(conn: DbConnection, rule_key: str) -> dict[str, Any]:
     row = conn.execute(
         "SELECT * FROM validation_rules WHERE rule_key = ?",
         (rule_key,),
