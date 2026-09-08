@@ -122,7 +122,20 @@ const dom = {
 };
 
 bindShell();
+consumeTokenFromUrl();
 bootAuth();
+
+function consumeTokenFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token");
+  if (!token) return;
+  state.token = token;
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+  params.delete("token");
+  const query = params.toString();
+  const cleanUrl = window.location.pathname + (query ? `?${query}` : "") + window.location.hash;
+  window.history.replaceState({}, document.title, cleanUrl);
+}
 
 async function bootAuth() {
   if (!state.token) {

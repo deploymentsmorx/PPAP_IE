@@ -10,6 +10,7 @@ import sys
 import urllib.error
 import urllib.request
 import uuid
+import webbrowser
 from pathlib import Path
 
 try:
@@ -21,6 +22,15 @@ except ImportError as exc:  # pragma: no cover
 
 def api_base() -> str:
     return (os.environ.get("PPAP_API_URL") or "http://127.0.0.1:8010/api").rstrip("/")
+
+
+def web_root() -> str:
+    base = api_base()
+    return base[: -len("/api")] if base.endswith("/api") else base
+
+
+def open_dashboard(token: str) -> None:
+    webbrowser.open(f"{web_root()}/?token={token}")
 
 
 def device_id() -> str:
@@ -174,7 +184,8 @@ class SmorXApp(tk.Tk):
             if user.get("must_change_password"):
                 self._build_change_password()
                 return
-            messagebox.showinfo("Signed in", f"Welcome, {user.get('display_name') or user.get('username')}")
+            open_dashboard(self.token)
+            self.destroy()
         except Exception as exc:  # noqa: BLE001
             messagebox.showerror("Login failed", str(exc))
 
@@ -197,7 +208,8 @@ class SmorXApp(tk.Tk):
         try:
             with urllib.request.urlopen(req, timeout=30) as resp:
                 json.loads(resp.read().decode("utf-8"))
-            messagebox.showinfo("Password updated", "Password changed. You are ready to use SmorX PPAP.")
+            open_dashboard(self.token)
+            self.destroy()
         except Exception as exc:  # noqa: BLE001
             messagebox.showerror("Change password failed", str(exc))
 
