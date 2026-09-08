@@ -24,12 +24,13 @@ def api_base() -> str:
 
 
 def device_id() -> str:
+    """Matches the "Device ID" shown on Windows Settings > System > About."""
     try:
         import winreg
 
-        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Cryptography") as key:
-            guid, _ = winreg.QueryValueEx(key, "MachineGuid")
-        return f"DEV-{str(guid).strip().upper()}"
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\SQMClient") as key:
+            machine_id, _ = winreg.QueryValueEx(key, "MachineId")
+        return f"DEV-{str(machine_id).strip().strip('{}').upper()}"
     except OSError:
         node = uuid.getnode()
         return f"DEV-{node:012X}"
