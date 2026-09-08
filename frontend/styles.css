@@ -265,6 +265,17 @@ form {
   align-items: end;
 }
 
+.create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.create-form .field,
+.create-form .toggle-row {
+  width: 100%;
+}
+
 label {
   display: block;
   margin-bottom: 7px;
@@ -280,7 +291,11 @@ label {
 input[type="file"],
 select,
 textarea,
-input[type="text"] {
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input:not([type]) {
   width: 100%;
   padding: 12px;
   border: 1px solid var(--line);
