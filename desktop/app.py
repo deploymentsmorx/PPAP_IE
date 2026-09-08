@@ -24,8 +24,15 @@ def api_base() -> str:
 
 
 def device_id() -> str:
-    node = uuid.getnode()
-    return f"DEV-{node:012X}"
+    try:
+        import winreg
+
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Cryptography") as key:
+            guid, _ = winreg.QueryValueEx(key, "MachineGuid")
+        return f"DEV-{str(guid).strip().upper()}"
+    except OSError:
+        node = uuid.getnode()
+        return f"DEV-{node:012X}"
 
 
 def host_name() -> str:
