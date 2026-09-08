@@ -20,5 +20,6 @@ PPAP_share.zip
 
 desktop/build/
 desktop/dist-exe/
+desktop/target/
 desktop/*.spec
 desktop/api_url.txt

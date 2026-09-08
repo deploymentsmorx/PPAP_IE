@@ -390,10 +390,10 @@ function bindShell() {
   if (dom.cancelRule) dom.cancelRule.addEventListener("click", closeRuleEditor);
   if (dom.ruleForm) dom.ruleForm.addEventListener("submit", saveRule);
 
-  const customerForm = $("#customer-form");
-  if (customerForm) customerForm.addEventListener("submit", createCustomer);
-  const engineerForm = $("#engineer-form");
-  if (engineerForm) engineerForm.addEventListener("submit", addEngineer);
+  const customerUserForm = $("#customer-user-form");
+  if (customerUserForm) customerUserForm.addEventListener("submit", saveCustomerUser);
+  const cuOrg = $("#cu-org");
+  if (cuOrg) cuOrg.addEventListener("change", toggleNewOrgFields);
   const platformUserForm = $("#platform-user-form");
   if (platformUserForm) platformUserForm.addEventListener("submit", createPlatformUser);
 }
@@ -1201,14 +1201,34 @@ function showView(name) {
   });
 }
 
+function toggleNewOrgFields() {
+  const org = $("#cu-org");
+  const fields = $("#cu-new-org-fields");
+  if (!org || !fields) return;
+  const isNew = org.value === "__new__";
+  fields.hidden = !isNew;
+  $("#cu-company").required = isNew;
+  $("#cu-install-password").required = isNew;
+}
+
 async function loadCustomers() {
   const list = $("#customers-list");
+  const orgSelect = $("#cu-org");
   if (!list) return;
   list.innerHTML = "<p>Loading...</p>";
   try {
     const data = await api("/api/admin/customers");
+
+    if (orgSelect) {
+      const previous = orgSelect.value;
+      orgSelect.innerHTML = '<option value="__new__">+ New organisation</option>' +
+        (data.items || []).map((item) => `<option value="${esc(item.customer_id)}">${esc(item.company_name)} (${esc(item.license_key)})</option>`).join("");
+      orgSelect.value = (data.items || []).some((item) => item.customer_id === previous) ? previous : "__new__";
+      toggleNewOrgFields();
+    }
+
     if (!data.items?.length) {
-      list.innerHTML = "<p>No licensed customers yet.</p>";
+      list.innerHTML = "<p>No licensed organisations yet.</p>";
       return;
     }
     list.innerHTML = data.items.map((item) => `
@@ -1218,91 +1238,73 @@ async function loadCustomers() {
           <code>${esc(item.license_key)}</code>
         </header>
         <p>Device: ${esc(item.device_id || "—")} · Host: ${esc(item.host_name || "—")} · Require device: ${item.require_device ? "ON" : "OFF"}</p>
-        <p>Engineers: ${(item.engineers || []).map((e) => esc(e.email)).join(", ") || "—"}</p>
-        <button type="button" class="button-secondary" data-add-eng="${esc(item.customer_id)}">Add engineer</button>
+        <p>${(item.engineers || []).map((e) => `${esc(e.email)} <span class="tag">${esc(e.role_label || e.role)}</span>`).join(", ") || "No users yet."}</p>
       </article>
     `).join("");
-    list.querySelectorAll("[data-add-eng]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const panel = $("#engineer-panel");
-        const idInput = $("#eng-customer-id");
-        if (panel) panel.hidden = false;
-        if (idInput) idInput.value = btn.dataset.addEng;
-      });
-    });
   } catch (error) {
     list.innerHTML = `<p class="status-error">${esc(error.message)}</p>`;
   }
 }
 
-async function createCustomer(event) {
+async function saveCustomerUser(event) {
   event.preventDefault();
   const status = $("#customer-form-status");
   const creds = $("#customer-credentials");
+  const orgId = $("#cu-org").value;
+  const isNewOrg = orgId === "__new__";
   status.textContent = "Saving...";
   status.className = "form-status";
   try {
-    const payload = await api("/api/admin/customers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        company_name: $("#cust-company").value.trim(),
-        license_key: $("#cust-license").value.trim(),
-        install_password: $("#cust-install-password").value,
-        device_id: $("#cust-device").value.trim(),
-        host_name: $("#cust-host").value.trim(),
-        engineer_full_name: $("#cust-eng-name").value.trim(),
-        engineer_email: $("#cust-eng-email").value.trim(),
-        temporary_password: $("#cust-temp-password").value,
-        require_device: $("#cust-require-device").checked,
-        grant_full_access: $("#cust-grant-full").checked
-      })
-    });
-    status.textContent = "Customer saved.";
+    let payload;
+    if (isNewOrg) {
+      payload = await api("/api/admin/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company_name: $("#cu-company").value.trim(),
+          license_key: $("#cu-license").value.trim(),
+          install_password: $("#cu-install-password").value,
+          device_id: $("#cu-device").value.trim(),
+          host_name: $("#cu-host").value.trim(),
+          engineer_full_name: $("#cu-name").value.trim(),
+          engineer_email: $("#cu-email").value.trim(),
+          temporary_password: $("#cu-temp-password").value,
+          require_device: $("#cu-require-device").checked,
+          role: $("#cu-role").value
+        })
+      });
+    } else {
+      payload = await api(`/api/admin/customers/${encodeURIComponent(orgId)}/engineers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: $("#cu-name").value.trim(),
+          email: $("#cu-email").value.trim(),
+          temporary_password: $("#cu-temp-password").value,
+          device_id: $("#cu-device").value.trim(),
+          host_name: $("#cu-host").value.trim(),
+          role: $("#cu-role").value
+        })
+      });
+    }
+    status.textContent = "User saved.";
     status.className = "form-status status-ok";
     if (creds && payload.credentials) {
       const c = payload.credentials;
       creds.hidden = false;
       creds.innerHTML = `
-        <h3>Send to customer</h3>
+        <h3>Send to user</h3>
         <p><strong>License key:</strong> <code>${esc(c.license_key)}</code></p>
-        <p><strong>Install password:</strong> <code>${esc(c.install_password)}</code></p>
+        ${c.install_password ? `<p><strong>Install password:</strong> <code>${esc(c.install_password)}</code></p>` : ""}
         <p><strong>Email:</strong> <code>${esc(c.email)}</code></p>
         <p><strong>Temporary password:</strong> <code>${esc(c.temporary_password)}</code></p>
       `;
     }
     event.target.reset();
-    $("#cust-require-device").checked = true;
-    $("#cust-grant-full").checked = true;
+    $("#cu-require-device").checked = true;
     await loadCustomers();
-  } catch (error) {
-    status.textContent = error.message;
-    status.className = "form-status status-error";
-  }
-}
-
-async function addEngineer(event) {
-  event.preventDefault();
-  const status = $("#engineer-form-status");
-  const customerId = $("#eng-customer-id").value;
-  status.textContent = "Saving...";
-  try {
-    await api(`/api/admin/customers/${encodeURIComponent(customerId)}/engineers`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        full_name: $("#eng-name").value.trim(),
-        email: $("#eng-email").value.trim(),
-        temporary_password: $("#eng-temp").value,
-        device_id: $("#eng-device").value.trim(),
-        host_name: $("#eng-host").value.trim(),
-        grant_full_access: true
-      })
-    });
-    status.textContent = "Engineer added.";
-    event.target.reset();
-    $("#eng-customer-id").value = customerId;
-    await loadCustomers();
+    $("#cu-org").value = isNewOrg ? "__new__" : orgId;
+    toggleNewOrgFields();
   } catch (error) {
     status.textContent = error.message;
     status.className = "form-status status-error";

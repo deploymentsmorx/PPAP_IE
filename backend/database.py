@@ -143,6 +143,7 @@ CREATE TABLE IF NOT EXISTS customer_engineers (
     device_id TEXT NOT NULL DEFAULT '',
     host_name TEXT NOT NULL DEFAULT '',
     grant_full_access INTEGER NOT NULL DEFAULT 1,
+    role TEXT NOT NULL DEFAULT 'quality',
     must_change_password INTEGER NOT NULL DEFAULT 1,
     activated INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
@@ -282,6 +283,7 @@ CREATE TABLE IF NOT EXISTS customer_engineers (
     device_id TEXT NOT NULL DEFAULT '',
     host_name TEXT NOT NULL DEFAULT '',
     grant_full_access INTEGER NOT NULL DEFAULT 1,
+    role TEXT NOT NULL DEFAULT 'quality',
     must_change_password INTEGER NOT NULL DEFAULT 1,
     activated INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
@@ -333,8 +335,10 @@ def run_migrations(conn: DbConnection) -> None:
     ensure_column(conn, "users", "customer_id", "TEXT")
     ensure_column(conn, "users", "user_kind", "TEXT NOT NULL DEFAULT 'platform'")
     ensure_column(conn, "case_rule_reviews", "standard_id", "TEXT NOT NULL DEFAULT 'aiag_ppap'")
+    ensure_column(conn, "customer_engineers", "role", "TEXT NOT NULL DEFAULT 'quality'")
     backfill_ppap_ids(conn)
     normalize_legacy_statuses(conn)
+    backfill_engineer_roles(conn)
 
 
 def backfill_ppap_ids(conn: DbConnection) -> None:
@@ -362,6 +366,13 @@ def backfill_ppap_ids(conn: DbConnection) -> None:
             "UPDATE cases SET ppap_id = ? WHERE case_id = ?",
             (candidate, row["case_id"]),
         )
+
+
+def backfill_engineer_roles(conn: DbConnection) -> None:
+    """Pre-migration rows only carried grant_full_access; map that onto the new role column."""
+    conn.execute(
+        "UPDATE customer_engineers SET role = 'full_access' WHERE role = 'quality' AND grant_full_access = 1"
+    )
 
 
 def normalize_legacy_statuses(conn: DbConnection) -> None:

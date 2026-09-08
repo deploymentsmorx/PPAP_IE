@@ -493,45 +493,48 @@
         <div class="view-header">
           <div>
             <p class="eyebrow">EXE Licensing</p>
-            <h1>Customers</h1>
-            <p class="subhead">Register licensed EXE clients: company, license key, device lock, and first engineer.</p>
+            <h1>Users</h1>
+            <p class="subhead">Every user — including Super Admin — belongs to an organisation and is locked to one device. Pick an existing organisation or create a new one inline.</p>
           </div>
         </div>
         <div class="admin-grid">
           <section class="panel">
-            <h2>Create customer</h2>
-            <form id="customer-form" class="create-form">
-              <div class="field"><label for="cust-company">Company / organization name</label><input id="cust-company" required minlength="2"></div>
-              <div class="field"><label for="cust-license">License key (blank = auto AB-2026-XXXX)</label><input id="cust-license" placeholder="Leave blank to auto-generate"></div>
-              <div class="field"><label for="cust-install-password">Install password</label><input id="cust-install-password" type="password" required minlength="6"></div>
-              <div class="field"><label for="cust-device">Device ID</label><input id="cust-device" placeholder="DEV-..."></div>
-              <div class="field"><label for="cust-host">Host name</label><input id="cust-host" placeholder="DESKTOP-..."></div>
-              <div class="field"><label for="cust-eng-name">Engineer full name</label><input id="cust-eng-name" required minlength="2"></div>
-              <div class="field"><label for="cust-eng-email">Engineer email</label><input id="cust-eng-email" type="email" required></div>
-              <div class="field"><label for="cust-temp-password">Temporary password</label><input id="cust-temp-password" type="password" required minlength="6"></div>
-              <label class="toggle-row"><input id="cust-require-device" type="checkbox" checked><span>Require device (EXE only on approved PC)</span></label>
-              <label class="toggle-row"><input id="cust-grant-full" type="checkbox" checked><span>Grant full access</span></label>
+            <h2>Add user</h2>
+            <form id="customer-user-form" class="create-form">
+              <div class="field">
+                <label for="cu-org">Organisation</label>
+                <select id="cu-org">
+                  <option value="__new__">+ New organisation</option>
+                </select>
+              </div>
+              <div id="cu-new-org-fields">
+                <div class="field"><label for="cu-company">Company / organization name</label><input id="cu-company" minlength="2"></div>
+                <div class="field"><label for="cu-license">License key (blank = auto AB-2026-XXXX)</label><input id="cu-license" placeholder="Leave blank to auto-generate"></div>
+                <div class="field"><label for="cu-install-password">Install password</label><input id="cu-install-password" type="password" minlength="6"></div>
+                <label class="toggle-row"><input id="cu-require-device" type="checkbox" checked><span>Require device (EXE only on approved PC)</span></label>
+              </div>
+              <div class="field"><label for="cu-name">Full name</label><input id="cu-name" required minlength="2"></div>
+              <div class="field"><label for="cu-email">Email</label><input id="cu-email" type="email" required></div>
+              <div class="field">
+                <label for="cu-role">Role</label>
+                <select id="cu-role">
+                  <option value="super_admin">Super Admin</option>
+                  <option value="full_access">Full Access</option>
+                  <option value="creator" selected>PPAP Creation</option>
+                  <option value="quality">Quality</option>
+                </select>
+              </div>
+              <div class="field"><label for="cu-device">Device ID</label><input id="cu-device" placeholder="DEV-..." required></div>
+              <div class="field"><label for="cu-host">Host name</label><input id="cu-host" placeholder="DESKTOP-..." required></div>
+              <div class="field"><label for="cu-temp-password">Temporary password</label><input id="cu-temp-password" type="password" required minlength="6"></div>
               <div id="customer-form-status" class="form-status" aria-live="polite"></div>
               <button type="submit">Create &amp; save</button>
             </form>
             <div id="customer-credentials" class="credentials-box" hidden></div>
           </section>
           <section class="panel">
-            <h2>Licensed customers</h2>
+            <h2>Licensed users</h2>
             <div id="customers-list" class="admin-list"></div>
-            <div id="engineer-panel" class="engineer-panel" hidden>
-              <h3>Add engineer</h3>
-              <form id="engineer-form" class="create-form">
-                <input id="eng-customer-id" type="hidden">
-                <div class="field"><label for="eng-name">Full name</label><input id="eng-name" required></div>
-                <div class="field"><label for="eng-email">Email</label><input id="eng-email" type="email" required></div>
-                <div class="field"><label for="eng-temp">Temporary password</label><input id="eng-temp" type="password" required minlength="6"></div>
-                <div class="field"><label for="eng-device">Device ID</label><input id="eng-device"></div>
-                <div class="field"><label for="eng-host">Host name</label><input id="eng-host"></div>
-                <div id="engineer-form-status" class="form-status"></div>
-                <button type="submit">Add engineer</button>
-              </form>
-            </div>
           </section>
         </div>
       </section>

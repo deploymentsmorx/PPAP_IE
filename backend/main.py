@@ -137,6 +137,7 @@ class CustomerCreate(BaseModel):
     temporary_password: str = Field(min_length=6, max_length=200)
     require_device: bool = True
     grant_full_access: bool = True
+    role: str = Field(default="quality", max_length=40)
 
 
 class EngineerCreate(BaseModel):
@@ -146,6 +147,7 @@ class EngineerCreate(BaseModel):
     device_id: str = Field(default="", max_length=120)
     host_name: str = Field(default="", max_length=200)
     grant_full_access: bool = True
+    role: str = Field(default="quality", max_length=40)
 
 
 class PlatformUserCreate(BaseModel):

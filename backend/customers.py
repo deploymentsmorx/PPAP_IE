@@ -7,9 +7,12 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .auth import (
+    PLATFORM_ROLES,
     ROLE_FULL_ACCESS,
     ROLE_QUALITY,
+    ROLE_SUPER_ADMIN,
     hash_password,
+    role_label,
     serialize_user,
     verify_password,
 )
@@ -18,6 +21,13 @@ from .db import DbConnection
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _normalize_role(value: Any, grant_full_access: bool = False) -> str:
+    role = str(value or "").strip()
+    if role in PLATFORM_ROLES:
+        return role
+    return ROLE_FULL_ACCESS if grant_full_access else ROLE_QUALITY
 
 
 def generate_license_key(conn: DbConnection, year: int | None = None) -> str:
@@ -51,7 +61,8 @@ def create_customer(conn: DbConnection, payload: dict[str, Any]) -> dict[str, An
     engineer_name = str(payload.get("engineer_full_name") or "").strip()
     engineer_email = str(payload.get("engineer_email") or "").strip().lower()
     temp_password = str(payload.get("temporary_password") or "").strip()
-    grant_full_access = 1 if payload.get("grant_full_access", True) else 0
+    role = _normalize_role(payload.get("role"), grant_full_access=bool(payload.get("grant_full_access", True)))
+    grant_full_access = 1 if role in {ROLE_SUPER_ADMIN, ROLE_FULL_ACCESS} else 0
 
     if not engineer_name or not engineer_email or len(temp_password) < 6:
         raise ValueError("Engineer full name, email, and temporary password (min 6) are required.")
@@ -86,8 +97,8 @@ def create_customer(conn: DbConnection, payload: dict[str, Any]) -> dict[str, An
         """
         INSERT INTO customer_engineers (
             engineer_id, customer_id, full_name, email, password_salt, password_hash,
-            device_id, host_name, grant_full_access, must_change_password, activated, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)
+            device_id, host_name, grant_full_access, role, must_change_password, activated, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)
         """,
         (
             engineer_id,
@@ -99,6 +110,7 @@ def create_customer(conn: DbConnection, payload: dict[str, Any]) -> dict[str, An
             device_id,
             host_name,
             grant_full_access,
+            role,
             now,
         ),
     )
@@ -127,7 +139,8 @@ def add_engineer(conn: DbConnection, customer_id: str, payload: dict[str, Any]) 
     temp_password = str(payload.get("temporary_password") or "").strip()
     device_id = str(payload.get("device_id") or "").strip()
     host_name = str(payload.get("host_name") or "").strip()
-    grant_full_access = 1 if payload.get("grant_full_access", True) else 0
+    role = _normalize_role(payload.get("role"), grant_full_access=bool(payload.get("grant_full_access", True)))
+    grant_full_access = 1 if role in {ROLE_SUPER_ADMIN, ROLE_FULL_ACCESS} else 0
 
     if not full_name or not email or len(temp_password) < 6:
         raise ValueError("Name, email, and temporary password (min 6) are required.")
@@ -139,8 +152,8 @@ def add_engineer(conn: DbConnection, customer_id: str, payload: dict[str, Any]) 
         """
         INSERT INTO customer_engineers (
             engineer_id, customer_id, full_name, email, password_salt, password_hash,
-            device_id, host_name, grant_full_access, must_change_password, activated, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)
+            device_id, host_name, grant_full_access, role, must_change_password, activated, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)
         """,
         (
             engineer_id,
@@ -152,6 +165,7 @@ def add_engineer(conn: DbConnection, customer_id: str, payload: dict[str, Any]) 
             device_id,
             host_name,
             grant_full_access,
+            role,
             now,
         ),
     )
@@ -226,6 +240,7 @@ def _customer_public(row: dict[str, Any]) -> dict[str, Any]:
 def serialize_engineer(row: dict[str, Any] | None) -> dict[str, Any]:
     if not row:
         return {}
+    role = _normalize_role(row.get("role"), grant_full_access=bool(row.get("grant_full_access")))
     return {
         "engineer_id": row["engineer_id"],
         "customer_id": row["customer_id"],
@@ -233,6 +248,8 @@ def serialize_engineer(row: dict[str, Any] | None) -> dict[str, Any]:
         "email": row["email"],
         "device_id": row.get("device_id") or "",
         "host_name": row.get("host_name") or "",
+        "role": role,
+        "role_label": role_label(role),
         "grant_full_access": bool(row.get("grant_full_access")),
         "must_change_password": bool(row.get("must_change_password")),
         "activated": bool(row.get("activated")),
@@ -363,7 +380,7 @@ def login_engineer(conn: DbConnection, payload: dict[str, Any]) -> dict[str, Any
         if approved_host and host_name and approved_host.lower() != host_name.lower():
             raise PermissionError("Login blocked: Host name does not match the licensed PC.")
 
-    role = ROLE_FULL_ACCESS if row.get("grant_full_access") else ROLE_QUALITY
+    role = _normalize_role(row.get("role"), grant_full_access=bool(row.get("grant_full_access")))
     # Mirror into users table for session tokens.
     user_id = f"eng-{row['engineer_id']}"
     existing = conn.execute("SELECT user_id FROM users WHERE user_id = ?", (user_id,)).fetchone()
