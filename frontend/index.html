@@ -89,7 +89,6 @@
           <button class="nav-group-toggle" type="button" data-group="admin">Administration</button>
           <div class="nav-sub" data-group-panel="admin">
             <button class="nav-button" type="button" data-view="customers">Customers</button>
-            <button class="nav-button" type="button" data-view="users">Users</button>
             <button class="nav-button nav-disabled" type="button" disabled title="Phase 3">Roles</button>
             <button class="nav-button nav-disabled" type="button" disabled title="Phase 3">Settings</button>
           </div>
@@ -539,31 +538,6 @@
         </div>
       </section>
 
-      <section id="users-view" class="view" hidden>
-        <div class="view-header">
-          <div>
-            <p class="eyebrow">Platform</p>
-            <h1>Super Admins</h1>
-            <p class="subhead">Only Super Admin accounts can sign in to the web app directly. Every other role signs in through the SmorX PPAP desktop app, which cross-checks device ID and host name — add those users from the Users tab.</p>
-          </div>
-        </div>
-        <div class="admin-grid">
-          <section class="panel">
-            <h2>Add Super Admin</h2>
-            <form id="platform-user-form" class="create-form">
-              <div class="field"><label for="pu-username">Username</label><input id="pu-username" required></div>
-              <div class="field"><label for="pu-display">Display name</label><input id="pu-display"></div>
-              <div class="field"><label for="pu-password">Password</label><input id="pu-password" type="password" required minlength="6"></div>
-              <div id="platform-user-status" class="form-status"></div>
-              <button type="submit">Save user</button>
-            </form>
-          </section>
-          <section class="panel">
-            <h2>Super Admins</h2>
-            <div id="platform-users-list" class="admin-list"></div>
-          </section>
-        </div>
-      </section>
     </section>
   </main>
   <script src="/static/app.js" defer></script>

@@ -30,8 +30,7 @@ const dom = {
     workspace: $("#workspace-view"),
     report: $("#report-view"),
     rules: $("#rules-view"),
-    customers: $("#customers-view"),
-    users: $("#users-view")
+    customers: $("#customers-view")
   },
   navButtons: $$(".nav-button[data-view]"),
   greeting: $("#dashboard-greeting"),
@@ -225,7 +224,7 @@ function applyRoleVisibility() {
   if (!perms.create && !dom.views.create.hidden) {
     showView("dashboard");
   }
-  if (!isSuperAdmin() && ((dom.views.customers && !dom.views.customers.hidden) || (dom.views.users && !dom.views.users.hidden))) {
+  if (!isSuperAdmin() && dom.views.customers && !dom.views.customers.hidden) {
     showView("dashboard");
   }
 }
@@ -357,13 +356,6 @@ function bindShell() {
         }
         showView("customers");
         await loadCustomers();
-      } else if (view === "users") {
-        if (!isSuperAdmin()) {
-          showView("dashboard");
-          return;
-        }
-        showView("users");
-        await loadPlatformUsers();
       } else if (view === "dashboard") {
         showView("dashboard");
         await loadDashboard();
@@ -407,8 +399,6 @@ function bindShell() {
   if (customerUserForm) customerUserForm.addEventListener("submit", saveCustomerUser);
   const cuOrg = $("#cu-org");
   if (cuOrg) cuOrg.addEventListener("change", toggleNewOrgFields);
-  const platformUserForm = $("#platform-user-form");
-  if (platformUserForm) platformUserForm.addEventListener("submit", createPlatformUser);
 }
 
 async function loadDashboard() {
@@ -1316,47 +1306,6 @@ async function saveCustomerUser(event) {
     await loadCustomers();
     $("#cu-org").value = isNewOrg ? "__new__" : orgId;
     toggleNewOrgFields();
-  } catch (error) {
-    status.textContent = error.message;
-    status.className = "form-status status-error";
-  }
-}
-
-async function loadPlatformUsers() {
-  const list = $("#platform-users-list");
-  if (!list) return;
-  list.innerHTML = "<p>Loading...</p>";
-  try {
-    const data = await api("/api/admin/users");
-    list.innerHTML = (data.items || []).map((user) => `
-      <article class="admin-card">
-        <header><strong>${esc(user.display_name || user.username)}</strong><span>${esc(user.role_label || user.role)}</span></header>
-        <p>@${esc(user.username)}</p>
-      </article>
-    `).join("") || "<p>No users.</p>";
-  } catch (error) {
-    list.innerHTML = `<p class="status-error">${esc(error.message)}</p>`;
-  }
-}
-
-async function createPlatformUser(event) {
-  event.preventDefault();
-  const status = $("#platform-user-status");
-  status.textContent = "Saving...";
-  try {
-    await api("/api/admin/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: $("#pu-username").value.trim(),
-        display_name: $("#pu-display").value.trim(),
-        role: "super_admin",
-        password: $("#pu-password").value
-      })
-    });
-    status.textContent = "User saved.";
-    event.target.reset();
-    await loadPlatformUsers();
   } catch (error) {
     status.textContent = error.message;
     status.className = "form-status status-error";
