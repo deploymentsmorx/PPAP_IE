@@ -74,6 +74,20 @@ app = FastAPI(title="SmorX.ai PPAP Flow")
 app.mount("/static", StaticFiles(directory=settings.frontend_dir), name="static")
 
 
+@app.middleware("http")
+async def no_cache_frontend(request, call_next):
+    """Force the browser to revalidate index.html/static assets on every load.
+
+    Without this, browsers may reuse a stale copy of app.js/index.html from
+    heuristic caching (no explicit Cache-Control was ever set), so a deployed
+    UI change can silently not show up until the user hard-refreshes.
+    """
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache, must-revalidate"
+    return response
+
+
 class RuleCreate(BaseModel):
     standard_id: str = DEFAULT_STANDARD_ID
     element_number: int = Field(ge=1, le=99)
