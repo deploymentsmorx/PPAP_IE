@@ -123,11 +123,9 @@ class SmorXApp(tk.Tk):
         ttk.Label(frame, text="Login", font=("Segoe UI", 18, "bold")).pack(anchor="w")
         self.login_email = tk.StringVar()
         self.login_password = tk.StringVar()
-        self.login_license = tk.StringVar()
         for label, var, show in [
             ("Email", self.login_email, ""),
             ("Password", self.login_password, "*"),
-            ("License key (optional)", self.login_license, ""),
         ]:
             ttk.Label(frame, text=label).pack(anchor="w", pady=(8, 0))
             ttk.Entry(frame, textvariable=var, show=show).pack(fill="x")
@@ -163,7 +161,7 @@ class SmorXApp(tk.Tk):
             messagebox.showinfo("Activated", f"Activated for {result.get('company_name', 'customer')}. You can log in now.")
             self._build_login()
             self.login_email.set(self.email.get().strip())
-            self.login_license.set(self.license_key.get().strip())
+            self._license_key = self.license_key.get().strip()
         except Exception as exc:  # noqa: BLE001
             messagebox.showerror("Activation failed", str(exc))
 
@@ -174,7 +172,7 @@ class SmorXApp(tk.Tk):
                 {
                     "email": self.login_email.get().strip(),
                     "password": self.login_password.get(),
-                    "license_key": self.login_license.get().strip(),
+                    "license_key": getattr(self, "_license_key", ""),
                     "device_id": device_id(),
                     "host_name": host_name(),
                 },
