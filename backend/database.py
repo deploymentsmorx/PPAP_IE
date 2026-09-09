@@ -140,6 +140,8 @@ CREATE TABLE IF NOT EXISTS customer_engineers (
     email TEXT NOT NULL,
     password_salt TEXT NOT NULL,
     password_hash TEXT NOT NULL,
+    install_password_salt TEXT,
+    install_password_hash TEXT,
     device_id TEXT NOT NULL DEFAULT '',
     host_name TEXT NOT NULL DEFAULT '',
     grant_full_access INTEGER NOT NULL DEFAULT 1,
@@ -280,6 +282,8 @@ CREATE TABLE IF NOT EXISTS customer_engineers (
     email TEXT NOT NULL,
     password_salt TEXT NOT NULL,
     password_hash TEXT NOT NULL,
+    install_password_salt TEXT,
+    install_password_hash TEXT,
     device_id TEXT NOT NULL DEFAULT '',
     host_name TEXT NOT NULL DEFAULT '',
     grant_full_access INTEGER NOT NULL DEFAULT 1,
@@ -336,6 +340,8 @@ def run_migrations(conn: DbConnection) -> None:
     ensure_column(conn, "users", "user_kind", "TEXT NOT NULL DEFAULT 'platform'")
     ensure_column(conn, "case_rule_reviews", "standard_id", "TEXT NOT NULL DEFAULT 'aiag_ppap'")
     ensure_column(conn, "customer_engineers", "role", "TEXT NOT NULL DEFAULT 'quality'")
+    ensure_column(conn, "customer_engineers", "install_password_salt", "TEXT")
+    ensure_column(conn, "customer_engineers", "install_password_hash", "TEXT")
     backfill_ppap_ids(conn)
     normalize_legacy_statuses(conn)
     backfill_engineer_roles(conn)

@@ -1221,7 +1221,6 @@ function toggleNewOrgFields() {
   const isNew = org.value === "__new__";
   fields.hidden = !isNew;
   $("#cu-company").required = isNew;
-  $("#cu-install-password").required = isNew;
 }
 
 async function loadCustomers() {
@@ -1276,7 +1275,6 @@ async function saveCustomerUser(event) {
         body: JSON.stringify({
           company_name: $("#cu-company").value.trim(),
           license_key: $("#cu-license").value.trim(),
-          install_password: $("#cu-install-password").value,
           device_id: $("#cu-device").value.trim(),
           host_name: $("#cu-host").value.trim(),
           engineer_full_name: $("#cu-name").value.trim(),

@@ -276,6 +276,13 @@ form {
   width: 100%;
 }
 
+.field-hint {
+  margin: -6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 label {
   display: block;
   margin-bottom: 7px;

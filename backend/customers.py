@@ -49,9 +49,7 @@ def create_customer(conn: DbConnection, payload: dict[str, Any]) -> dict[str, An
     if len(company) < 2:
         raise ValueError("Company / organization name is required.")
 
-    install_password = str(payload.get("install_password") or "").strip()
-    if len(install_password) < 6:
-        raise ValueError("Install password must be at least 6 characters.")
+    install_password = str(payload.get("install_password") or "").strip() or secrets.token_urlsafe(9)
 
     license_key = str(payload.get("license_key") or "").strip() or generate_license_key(conn)
     device_id = str(payload.get("device_id") or "").strip()
@@ -97,8 +95,9 @@ def create_customer(conn: DbConnection, payload: dict[str, Any]) -> dict[str, An
         """
         INSERT INTO customer_engineers (
             engineer_id, customer_id, full_name, email, password_salt, password_hash,
+            install_password_salt, install_password_hash,
             device_id, host_name, grant_full_access, role, must_change_password, activated, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)
         """,
         (
             engineer_id,
@@ -107,6 +106,8 @@ def create_customer(conn: DbConnection, payload: dict[str, Any]) -> dict[str, An
             engineer_email,
             eng_salt,
             eng_hash,
+            install_salt,
+            install_hash,
             device_id,
             host_name,
             grant_full_access,
@@ -146,14 +147,17 @@ def add_engineer(conn: DbConnection, customer_id: str, payload: dict[str, Any]) 
         raise ValueError("Name, email, and temporary password (min 6) are required.")
 
     salt, password_hash = hash_password(temp_password)
+    install_password = str(payload.get("install_password") or "").strip() or secrets.token_urlsafe(9)
+    install_salt, install_hash = hash_password(install_password)
     engineer_id = secrets.token_hex(8)
     now = _utc_now()
     conn.execute(
         """
         INSERT INTO customer_engineers (
             engineer_id, customer_id, full_name, email, password_salt, password_hash,
+            install_password_salt, install_password_hash,
             device_id, host_name, grant_full_access, role, must_change_password, activated, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)
         """,
         (
             engineer_id,
@@ -162,6 +166,8 @@ def add_engineer(conn: DbConnection, customer_id: str, payload: dict[str, Any]) 
             email,
             salt,
             password_hash,
+            install_salt,
+            install_hash,
             device_id,
             host_name,
             grant_full_access,
@@ -179,6 +185,7 @@ def add_engineer(conn: DbConnection, customer_id: str, payload: dict[str, Any]) 
         ),
         "credentials": {
             "license_key": customer["license_key"],
+            "install_password": install_password,
             "email": email,
             "temporary_password": temp_password,
             "device_id": device_id,
@@ -274,26 +281,6 @@ def activate_license(conn: DbConnection, payload: dict[str, Any]) -> dict[str, A
     ).fetchone()
     if customer is None:
         raise PermissionError("Invalid license key or install password.")
-    if not verify_password(
-        install_password,
-        customer["install_password_salt"],
-        customer["install_password_hash"],
-    ):
-        raise PermissionError("Invalid license key or install password.")
-
-    if customer.get("require_device"):
-        approved_device = (customer.get("device_id") or "").strip()
-        approved_host = (customer.get("host_name") or "").strip()
-        eng = conn.execute(
-            "SELECT * FROM customer_engineers WHERE customer_id = ? AND LOWER(email) = ?",
-            (customer["customer_id"], email),
-        ).fetchone()
-        eng_device = (eng.get("device_id") if eng else "") or approved_device
-        eng_host = (eng.get("host_name") if eng else "") or approved_host
-        if eng_device and device_id and eng_device != device_id:
-            raise PermissionError("This license is locked to a different Device ID.")
-        if eng_host and host_name and eng_host.lower() != host_name.lower():
-            raise PermissionError("This license is locked to a different host name.")
 
     engineer = conn.execute(
         "SELECT * FROM customer_engineers WHERE customer_id = ? AND LOWER(email) = ?",
@@ -305,6 +292,33 @@ def activate_license(conn: DbConnection, payload: dict[str, Any]) -> dict[str, A
         engineer["password_hash"],
     ):
         raise PermissionError("Invalid engineer email or temporary password.")
+
+    # Each engineer gets their own install password (set when added); engineers
+    # created before that feature existed fall back to the shared org-level one.
+    if engineer.get("install_password_hash"):
+        install_ok = verify_password(
+            install_password,
+            engineer["install_password_salt"],
+            engineer["install_password_hash"],
+        )
+    else:
+        install_ok = verify_password(
+            install_password,
+            customer["install_password_salt"],
+            customer["install_password_hash"],
+        )
+    if not install_ok:
+        raise PermissionError("Invalid license key or install password.")
+
+    if customer.get("require_device"):
+        approved_device = (customer.get("device_id") or "").strip()
+        approved_host = (customer.get("host_name") or "").strip()
+        eng_device = (engineer.get("device_id") or "") or approved_device
+        eng_host = (engineer.get("host_name") or "") or approved_host
+        if eng_device and device_id and eng_device != device_id:
+            raise PermissionError("This license is locked to a different Device ID.")
+        if eng_host and host_name and eng_host.lower() != host_name.lower():
+            raise PermissionError("This license is locked to a different host name.")
 
     conn.execute(
         """

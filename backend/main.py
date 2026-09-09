@@ -129,7 +129,7 @@ class LoginRequest(BaseModel):
 class CustomerCreate(BaseModel):
     company_name: str = Field(min_length=2, max_length=200)
     license_key: str = Field(default="", max_length=80)
-    install_password: str = Field(min_length=6, max_length=200)
+    install_password: str = Field(default="", max_length=200)
     device_id: str = Field(default="", max_length=120)
     host_name: str = Field(default="", max_length=200)
     engineer_full_name: str = Field(min_length=2, max_length=200)
@@ -144,6 +144,7 @@ class EngineerCreate(BaseModel):
     full_name: str = Field(min_length=2, max_length=200)
     email: str = Field(min_length=3, max_length=200)
     temporary_password: str = Field(min_length=6, max_length=200)
+    install_password: str = Field(default="", max_length=200)
     device_id: str = Field(default="", max_length=120)
     host_name: str = Field(default="", max_length=200)
     grant_full_access: bool = True
