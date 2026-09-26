@@ -3,6 +3,9 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
 const AUTH_TOKEN_KEY = "smorx_ppap_token";
+const DEVICE_ID_KEY = "smorx_ppap_device_id";
+const HOSTNAME_KEY = "smorx_ppap_hostname";
+const ACTIVATED_KEY = "smorx_ppap_activated";
 
 const state = {
   caseId: "",
@@ -20,6 +23,41 @@ const state = {
   user: null
 };
 
+function getStoredMachine() {
+  return {
+    deviceId: localStorage.getItem(DEVICE_ID_KEY) || "",
+    hostname: localStorage.getItem(HOSTNAME_KEY) || ""
+  };
+}
+
+function persistMachine(deviceId, hostname) {
+  if (deviceId) localStorage.setItem(DEVICE_ID_KEY, deviceId.trim());
+  if (hostname) localStorage.setItem(HOSTNAME_KEY, hostname.trim());
+}
+
+async function detectMachine() {
+  const stored = getStoredMachine();
+  let deviceId = stored.deviceId;
+  let hostname = stored.hostname;
+  try {
+    if (window.__TAURI__?.core?.invoke) {
+      const info = await window.__TAURI__.core.invoke("get_device_info");
+      if (info?.device_id) deviceId = String(info.device_id);
+      if (info?.hostname) hostname = String(info.hostname);
+    }
+  } catch {
+    // web / missing bridge — keep stored or empty
+  }
+  if (!deviceId) {
+    deviceId = `WEB-${btoa(navigator.userAgent).replace(/[^A-Z0-9]/gi, "").slice(0, 12) || "LOCAL"}`;
+  }
+  if (!hostname) {
+    hostname = (navigator.platform || "browser").replace(/\s+/g, "-");
+  }
+  persistMachine(deviceId, hostname);
+  return { deviceId, hostname };
+}
+
 const stepOrder = ["setup", "upload", "map", "validate", "resolve", "approval", "report", "submission"];
 
 const dom = {
@@ -30,7 +68,8 @@ const dom = {
     workspace: $("#workspace-view"),
     report: $("#report-view"),
     rules: $("#rules-view"),
-    customers: $("#customers-view")
+    customers: $("#customers-view"),
+    guide: $("#guide-view")
   },
   navButtons: $$(".nav-button[data-view]"),
   greeting: $("#dashboard-greeting"),
@@ -112,6 +151,8 @@ const dom = {
   loginOverlay: $("#login-overlay"),
   loginForm: $("#login-form"),
   loginStatus: $("#login-status"),
+  activateForm: $("#activate-form"),
+  activateStatus: $("#activate-status"),
   appShell: $("#app-shell"),
   rulesNavGroup: $("#rules-nav-group"),
   reportsNavGroup: $("#reports-nav-group"),
@@ -195,15 +236,20 @@ function permissions() {
 
 function applyRoleVisibility() {
   const perms = permissions();
-  if (dom.rulesNavGroup) dom.rulesNavGroup.hidden = !perms.rules;
+  const superAdmin = isSuperAdmin();
+  // AIAG / VDA Rules & Standards — Super Admin only (never show to creators/quality/users)
+  if (dom.rulesNavGroup) dom.rulesNavGroup.hidden = !superAdmin;
   if (dom.reportsNavGroup) dom.reportsNavGroup.hidden = !perms.quality;
-  if (dom.adminNavGroup) dom.adminNavGroup.hidden = !isSuperAdmin();
+  if (dom.adminNavGroup) dom.adminNavGroup.hidden = !superAdmin;
 
   $$(".create-only").forEach((node) => {
     node.hidden = !perms.create;
   });
   $$(".quality-only").forEach((node) => {
     node.hidden = !perms.quality;
+  });
+  $$(".super-admin-only").forEach((node) => {
+    node.hidden = !superAdmin;
   });
 
   // Workspace tabs: hide quality tabs for creation-only users.
@@ -215,7 +261,7 @@ function applyRoleVisibility() {
     }
   });
 
-  if (!perms.rules && !dom.views.rules.hidden) {
+  if (!superAdmin && dom.views.rules && !dom.views.rules.hidden) {
     showView("dashboard");
   }
   if (!perms.quality && !dom.views.report.hidden) {
@@ -224,13 +270,13 @@ function applyRoleVisibility() {
   if (!perms.create && !dom.views.create.hidden) {
     showView("dashboard");
   }
-  if (!isSuperAdmin() && dom.views.customers && !dom.views.customers.hidden) {
+  if (!superAdmin && dom.views.customers && !dom.views.customers.hidden) {
     showView("dashboard");
   }
 }
 
 function isSuperAdmin() {
-  return Boolean(state.user?.is_super_admin || permissions().rules);
+  return Boolean(state.user?.is_super_admin || state.user?.role === "super_admin");
 }
 
 function canCreate() {
@@ -241,26 +287,113 @@ function canQuality() {
   return Boolean(permissions().quality);
 }
 
+function showAuthTab(tab) {
+  const loginTab = $("#tab-login");
+  const activateTab = $("#tab-activate");
+  if (loginTab) loginTab.classList.toggle("active", tab === "login");
+  if (activateTab) activateTab.classList.toggle("active", tab === "activate");
+  if (dom.loginForm) dom.loginForm.hidden = tab !== "login";
+  if (dom.activateForm) dom.activateForm.hidden = tab !== "activate";
+  if (tab === "activate") fillActivateMachineFields();
+}
+
+async function fillActivateMachineFields() {
+  const machine = await detectMachine();
+  const deviceReadonly = $("#act-device");
+  const hostReadonly = $("#act-host");
+  const deviceEdit = $("#act-device-edit");
+  const hostEdit = $("#act-host-edit");
+  if (deviceReadonly) deviceReadonly.value = machine.deviceId;
+  if (hostReadonly) hostReadonly.value = machine.hostname;
+  if (deviceEdit && !deviceEdit.value) deviceEdit.value = machine.deviceId;
+  if (hostEdit && !hostEdit.value) hostEdit.value = machine.hostname;
+}
+
 async function handleLogin(event) {
   event.preventDefault();
   dom.loginStatus.textContent = "Signing in...";
   dom.loginStatus.className = "form-status";
+  const username = $("#login-username").value.trim();
+  const password = $("#login-password").value;
+  const licenseKey = ($("#login-license")?.value || "").trim();
   try {
-    const payload = await api("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: $("#login-username").value.trim(),
-        password: $("#login-password").value
-      })
-    });
+    let payload;
+    if (licenseKey || username.includes("@")) {
+      const machine = await detectMachine();
+      try {
+        payload = await api("/api/license/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: username,
+            password,
+            license_key: licenseKey,
+            device_id: machine.deviceId,
+            host_name: machine.hostname
+          })
+        });
+      } catch (licenseErr) {
+        if (licenseKey) throw licenseErr;
+        payload = await api("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+      }
+    } else {
+      payload = await api("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+    }
     applySession(payload.user, payload.token);
     dom.loginForm.reset();
     dom.loginStatus.textContent = "";
     await loadDashboard();
+    if (isSuperAdmin()) {
+      showView("customers");
+    } else {
+      showView("dashboard");
+    }
   } catch (error) {
-    dom.loginStatus.textContent = error.message;
+    dom.loginStatus.textContent = error.message || "Sign in failed";
     dom.loginStatus.className = "form-status status-error";
+  }
+}
+
+async function handleActivate(event) {
+  event.preventDefault();
+  if (!dom.activateStatus) return;
+  dom.activateStatus.textContent = "Activating...";
+  dom.activateStatus.className = "form-status";
+  const deviceId = ($("#act-device-edit")?.value || $("#act-device")?.value || "").trim();
+  const hostName = ($("#act-host-edit")?.value || $("#act-host")?.value || "").trim();
+  try {
+    await api("/api/license/activate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        license_key: $("#act-license").value.trim(),
+        install_password: $("#act-install").value,
+        email: $("#act-email").value.trim(),
+        temporary_password: $("#act-temp").value,
+        device_id: deviceId,
+        host_name: hostName
+      })
+    });
+    persistMachine(deviceId, hostName);
+    localStorage.setItem(ACTIVATED_KEY, "1");
+    dom.activateStatus.textContent = "Activated. Sign in with your email and temporary password.";
+    dom.activateStatus.className = "form-status status-ok";
+    const loginUser = $("#login-username");
+    const loginLicense = $("#login-license");
+    if (loginUser) loginUser.value = $("#act-email").value.trim();
+    if (loginLicense) loginLicense.value = $("#act-license").value.trim();
+    showAuthTab("login");
+  } catch (error) {
+    dom.activateStatus.textContent = error.message || "Activation failed";
+    dom.activateStatus.className = "form-status status-error";
   }
 }
 
@@ -276,7 +409,19 @@ async function handleLogout() {
 
 function bindShell() {
   if (dom.loginForm) dom.loginForm.addEventListener("submit", handleLogin);
+  if (dom.activateForm) dom.activateForm.addEventListener("submit", handleActivate);
   if (dom.logoutButton) dom.logoutButton.addEventListener("click", handleLogout);
+  $$("[data-auth-tab]").forEach((btn) => {
+    btn.addEventListener("click", () => showAuthTab(btn.dataset.authTab));
+  });
+  const detectBtn = $("#act-detect");
+  if (detectBtn) {
+    detectBtn.addEventListener("click", async () => {
+      localStorage.removeItem(DEVICE_ID_KEY);
+      localStorage.removeItem(HOSTNAME_KEY);
+      await fillActivateMachineFields();
+    });
+  }
 
   const bindClick = (id, handler) => {
     const node = typeof id === "string" ? $(id) : id;
@@ -335,6 +480,7 @@ function bindShell() {
       } else if (view === "rules") {
         if (!isSuperAdmin()) {
           showView("dashboard");
+          await loadDashboard();
           return;
         }
         if (button.dataset.standard) {
@@ -359,6 +505,8 @@ function bindShell() {
       } else if (view === "dashboard") {
         showView("dashboard");
         await loadDashboard();
+      } else if (view === "guide") {
+        showView("guide");
       } else {
         showView(view);
       }
@@ -954,7 +1102,8 @@ function reportElement(element, prefix = "E") {
 
 async function loadRules() {
   if (!isSuperAdmin()) {
-    dom.rulesCount.textContent = "Rules are available to Super Admin only.";
+    if (dom.rulesCount) dom.rulesCount.textContent = "Rules are available to Super Admin only.";
+    showView("dashboard");
     return;
   }
   dom.rulesCount.textContent = "Loading rules...";
@@ -1258,6 +1407,7 @@ async function saveCustomerUser(event) {
   status.className = "form-status";
   try {
     let payload;
+    const installPassword = ($("#cu-install")?.value || "").trim();
     if (isNewOrg) {
       payload = await api("/api/admin/customers", {
         method: "POST",
@@ -1265,6 +1415,7 @@ async function saveCustomerUser(event) {
         body: JSON.stringify({
           company_name: $("#cu-company").value.trim(),
           license_key: $("#cu-license").value.trim(),
+          install_password: installPassword,
           device_id: $("#cu-device").value.trim(),
           host_name: $("#cu-host").value.trim(),
           engineer_full_name: $("#cu-name").value.trim(),
@@ -1282,6 +1433,7 @@ async function saveCustomerUser(event) {
           full_name: $("#cu-name").value.trim(),
           email: $("#cu-email").value.trim(),
           temporary_password: $("#cu-temp-password").value,
+          install_password: installPassword,
           device_id: $("#cu-device").value.trim(),
           host_name: $("#cu-host").value.trim(),
           role: $("#cu-role").value
@@ -1292,14 +1444,33 @@ async function saveCustomerUser(event) {
     status.className = "form-status status-ok";
     if (creds && payload.credentials) {
       const c = payload.credentials;
+      const pack = [
+        `License key: ${c.license_key || ""}`,
+        `Install password: ${c.install_password || "(none)"}`,
+        `Email: ${c.email || ""}`,
+        `Temporary password: ${c.temporary_password || ""}`
+      ].join("\n");
       creds.hidden = false;
       creds.innerHTML = `
-        <h3>Send to user</h3>
+        <h3>Send to customer</h3>
         <p><strong>License key:</strong> <code>${esc(c.license_key)}</code></p>
-        ${c.install_password ? `<p><strong>Install password:</strong> <code>${esc(c.install_password)}</code></p>` : ""}
+        <p><strong>Install password:</strong> <code>${esc(c.install_password || "(none)")}</code></p>
         <p><strong>Email:</strong> <code>${esc(c.email)}</code></p>
         <p><strong>Temporary password:</strong> <code>${esc(c.temporary_password)}</code></p>
+        <p class="field-hint">Customer uses Activate with Device ID + Host from their screen, then signs in on that PC only.</p>
+        <button type="button" class="secondary" id="copy-customer-creds">Copy credentials</button>
       `;
+      const copyBtn = $("#copy-customer-creds");
+      if (copyBtn) {
+        copyBtn.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(pack);
+            copyBtn.textContent = "Copied";
+          } catch {
+            copyBtn.textContent = "Copy failed";
+          }
+        });
+      }
     }
     event.target.reset();
     $("#cu-require-device").checked = true;

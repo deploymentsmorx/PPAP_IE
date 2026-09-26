@@ -389,9 +389,19 @@ def login_engineer(conn: DbConnection, payload: dict[str, Any]) -> dict[str, Any
     if row.get("require_device"):
         approved_device = (row.get("device_id") or row.get("customer_device_id") or "").strip()
         approved_host = (row.get("host_name") or row.get("customer_host_name") or "").strip()
-        if approved_device and device_id and approved_device != device_id:
+        if not device_id and not host_name:
+            raise PermissionError(
+                "Login blocked: Device ID and host name are required on this license."
+            )
+        if not approved_device and not approved_host:
+            raise PermissionError(
+                "Login blocked: This license has no approved PC yet. Activate first."
+            )
+        if approved_device and (not device_id or approved_device != device_id):
             raise PermissionError("Login blocked: Device ID does not match the licensed PC.")
-        if approved_host and host_name and approved_host.lower() != host_name.lower():
+        if approved_host and (
+            not host_name or approved_host.lower() != host_name.lower()
+        ):
             raise PermissionError("Login blocked: Host name does not match the licensed PC.")
 
     role = _normalize_role(row.get("role"), grant_full_access=bool(row.get("grant_full_access")))

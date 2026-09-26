@@ -7,29 +7,82 @@
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <div id="login-overlay" class="login-overlay" hidden>
-    <form id="login-form" class="login-card">
+  <div id="login-overlay" class="login-overlay">
+    <div class="login-card">
       <div class="brand login-brand">
         <div class="brand-text">
           <strong>SmorX.ai</strong>
           <span>PPAP Flow</span>
         </div>
       </div>
-      <div class="login-header">
-        <h1>Sign in</h1>
-        <p>Enter your credentials to continue.</p>
+      <div class="login-tabs" role="tablist">
+        <button type="button" class="login-tab active" data-auth-tab="login" id="tab-login">Sign in</button>
+        <button type="button" class="login-tab" data-auth-tab="activate" id="tab-activate">Activate</button>
       </div>
-      <div class="field">
-        <label for="login-username">Username</label>
-        <input id="login-username" name="username" type="text" required autocomplete="username" autofocus>
-      </div>
-      <div class="field">
-        <label for="login-password">Password</label>
-        <input id="login-password" name="password" type="password" required autocomplete="current-password">
-      </div>
-      <button type="submit">Sign in</button>
-      <div id="login-status" class="form-status" aria-live="polite"></div>
-    </form>
+
+      <form id="login-form">
+        <div class="login-header">
+          <h1>Sign in</h1>
+          <p>Platform Super Admin or activated engineer on an approved PC.</p>
+        </div>
+        <div class="field">
+          <label for="login-username">Email / username</label>
+          <input id="login-username" name="username" type="text" required autocomplete="username" autofocus>
+        </div>
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input id="login-password" name="password" type="password" required autocomplete="current-password">
+        </div>
+        <div class="field">
+          <label for="login-license">License key <span class="hint">(engineers)</span></label>
+          <input id="login-license" name="license" type="text" placeholder="AB-2026-XXXX" autocomplete="off">
+        </div>
+        <button type="submit">Sign in</button>
+        <div id="login-status" class="form-status" aria-live="polite"></div>
+      </form>
+
+      <form id="activate-form" hidden>
+        <div class="login-header">
+          <h1>Activate</h1>
+          <p>First-time setup. Send Device ID and Host name to Super Admin if they do not have them yet.</p>
+        </div>
+        <div class="field">
+          <label for="act-device">Device ID</label>
+          <input id="act-device" readonly>
+        </div>
+        <div class="field">
+          <label for="act-host">Host name</label>
+          <input id="act-host" readonly>
+        </div>
+        <p class="field-hint"><button type="button" id="act-detect" class="link-btn">Detect / refresh Device ID</button> · For web testing you may paste values below if detect is empty.</p>
+        <div class="field">
+          <label for="act-device-edit">Device ID (paste if needed)</label>
+          <input id="act-device-edit" placeholder="DEV-...">
+        </div>
+        <div class="field">
+          <label for="act-host-edit">Host name (paste if needed)</label>
+          <input id="act-host-edit" placeholder="DESKTOP-...">
+        </div>
+        <div class="field">
+          <label for="act-license">License key</label>
+          <input id="act-license" required placeholder="AB-2026-XXXX" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="act-install">Install password</label>
+          <input id="act-install" type="password" required autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="act-email">Email</label>
+          <input id="act-email" type="email" required autocomplete="username">
+        </div>
+        <div class="field">
+          <label for="act-temp">Temporary password</label>
+          <input id="act-temp" type="password" required autocomplete="current-password">
+        </div>
+        <button type="submit">Activate</button>
+        <div id="activate-status" class="form-status" aria-live="polite"></div>
+      </form>
+    </div>
   </div>
   <main class="app-shell" id="app-shell" hidden>
     <aside class="sidebar">
@@ -42,6 +95,7 @@
 
       <nav class="nav" aria-label="Primary">
         <button class="nav-button active" type="button" data-view="dashboard">Dashboard</button>
+        <button class="nav-button" type="button" data-view="guide">How to use</button>
 
         <div class="nav-group" id="submissions-nav-group">
           <button class="nav-group-toggle" type="button" data-group="submissions">Submissions</button>
@@ -75,7 +129,7 @@
           </div>
         </div>
 
-        <div class="nav-group" id="rules-nav-group" hidden>
+        <div class="nav-group super-admin-only" id="rules-nav-group" hidden>
           <button class="nav-group-toggle" type="button" data-group="rules">Rules &amp; Standards</button>
           <div class="nav-sub" data-group-panel="rules">
             <button class="nav-button" type="button" data-view="rules" data-standard="aiag_ppap">AIAG PPAP</button>
@@ -488,12 +542,139 @@
         </section>
       </section>
 
+      <section id="guide-view" class="view" hidden>
+        <div class="view-header">
+          <div>
+            <p class="eyebrow">Start here</p>
+            <h1>How to use SmorX.ai PPAP</h1>
+            <p class="subhead">Create a package, upload evidence, validate to AIAG/VDA rules, close issues, then approve and submit.</p>
+          </div>
+        </div>
+
+        <div class="howto-rule">One rule: open or create a submission first. Workspace, Validation, and Reports need an active PPAP case.</div>
+
+        <h2 class="howto-h2">Main areas</h2>
+        <div class="howto-grid">
+          <article class="howto-card">
+            <strong>Dashboard</strong>
+            <p>KPIs, recent submissions, validation health. Start each day here, then open a package or create a new one.</p>
+          </article>
+          <article class="howto-card">
+            <strong>Submissions</strong>
+            <p>All / Draft / In Review / Failed / Approved / Submitted filters. Search by PPAP ID, customer, or part, then open a row.</p>
+          </article>
+          <article class="howto-card">
+            <strong>Create New PPAP</strong>
+            <p>Enter customer, part, level, and standard (AIAG or VDA). This creates the workspace case you will fill with documents.</p>
+          </article>
+          <article class="howto-card">
+            <strong>PPAP Workspace</strong>
+            <p>Details → Documents → Validation → Issues/NCR → Approval. Work left to right through the process steps.</p>
+          </article>
+          <article class="howto-card">
+            <strong>Validation Report</strong>
+            <p>Readiness summary after validation. Export PDF/CSV when quality review needs a package snapshot.</p>
+          </article>
+          <article class="howto-card super-admin-only" hidden>
+            <strong>Rules &amp; Standards (Super Admin only)</strong>
+            <p>Browse and edit AIAG PPAP and VDA element rules used by the validator. Hidden from normal users.</p>
+          </article>
+          <article class="howto-card">
+            <strong>Administration → Login &amp; system details</strong>
+            <p>Super Admin only: company, license, install password, Device ID, Host name, engineer email, temporary password. Copy the credential pack for the customer EXE.</p>
+          </article>
+        </div>
+
+        <h2 class="howto-h2">Customer EXE handoff (Super Admin)</h2>
+        <ol class="howto-flow">
+          <li>
+            <strong>A. Customer opens Activate</strong>
+            <em>Login → Activate</em>
+            <span>Customer sends Device ID and Host name from the Activate screen to Super Admin.</span>
+          </li>
+          <li>
+            <strong>B. Super Admin provisions</strong>
+            <em>Login &amp; system details</em>
+            <span>Fill company, license (blank = auto), install password, Device ID, Host, engineer email, temporary password. Copy License, Install password, Email, Temporary password to the customer.</span>
+          </li>
+          <li>
+            <strong>C. Customer Activates then signs in</strong>
+            <em>Activate → Sign in</em>
+            <span>Activate with license + install password + email + temp password on that PC. Later logins work only on the approved Device ID when require-device is on. Platform superadmin is not device-bound.</span>
+          </li>
+        </ol>
+
+        <h2 class="howto-h2">Recommended flow</h2>
+        <ol class="howto-flow">
+          <li>
+            <strong>1. Sign in</strong>
+            <em>Login</em>
+            <span>Super Admin: platform username/password. Customer engineers: Activate first, then email + temporary password on the approved PC (license key on Sign in helps).</span>
+          </li>
+          <li>
+            <strong>2. Create PPAP</strong>
+            <em>Create New PPAP</em>
+            <span>Fill customer, part number, PPAP level, and standard. Save to open the workspace.</span>
+          </li>
+          <li>
+            <strong>3. Upload evidence</strong>
+            <em>Workspace → Documents</em>
+            <span>Upload drawings, control plans, MSA, material certs, and other element files. Keep names clear per element.</span>
+          </li>
+          <li>
+            <strong>4. Validate</strong>
+            <em>Workspace → Validation</em>
+            <span>Run validation against the selected standard. Review pass / fail / needs review per element.</span>
+          </li>
+          <li>
+            <strong>5. Close issues</strong>
+            <em>Workspace → Issues / NCR</em>
+            <span>Resolve failed checkpoints. Re-validate until the package is ready.</span>
+          </li>
+          <li>
+            <strong>6. Approve &amp; submit</strong>
+            <em>Approval + Report</em>
+            <span>Quality marks approved/submitted. Open Validation Report for the customer-ready summary.</span>
+          </li>
+        </ol>
+
+        <h2 class="howto-h2">Feature map</h2>
+        <div class="table-wrap howto-table">
+          <table>
+            <thead><tr><th>Feature</th><th>Where</th><th>How</th></tr></thead>
+            <tbody>
+              <tr><td>Dashboard KPIs</td><td>Dashboard</td><td>Scan health and open a recent submission</td></tr>
+              <tr><td>List &amp; filter packages</td><td>Submissions</td><td>Use status filters and search box</td></tr>
+              <tr><td>New package</td><td>Create New PPAP</td><td>Complete the form and save</td></tr>
+              <tr><td>Submission details</td><td>Workspace → Details</td><td>Edit metadata, level, due dates</td></tr>
+              <tr><td>Document upload</td><td>Workspace → Documents</td><td>Add files; they sync to S3 when configured</td></tr>
+              <tr><td>AI / rule validation</td><td>Workspace → Validation</td><td>Run checks; review element matrix</td></tr>
+              <tr><td>Issues / NCR</td><td>Workspace → Issues</td><td>Track and close findings</td></tr>
+              <tr><td>Approval gates</td><td>Workspace → Approval</td><td>Approve or submit when ready</td></tr>
+              <tr><td>Validation report</td><td>Reports</td><td>Open report; download PDF/CSV as needed</td></tr>
+              <tr class="super-admin-only" hidden><td>AIAG / VDA rules</td><td>Rules &amp; Standards</td><td>Super Admin only — inspect/edit element requirements</td></tr>
+              <tr><td>Customer licenses</td><td>Administration</td><td>Create licensed users for customer EXEs/web</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <section class="panel" style="margin-top:18px">
+          <h2>Roles</h2>
+          <div class="howto-grid">
+            <article class="howto-card"><strong>Super Admin</strong><p>Customers, rules, full package control.</p></article>
+            <article class="howto-card"><strong>Creator</strong><p>Create packages and upload documents.</p></article>
+            <article class="howto-card"><strong>Quality</strong><p>Validate, issues, approval, reports.</p></article>
+            <article class="howto-card"><strong>Full access</strong><p>End-to-end package ownership.</p></article>
+          </div>
+        </section>
+      </section>
+
       <section id="customers-view" class="view" hidden>
         <div class="view-header">
           <div>
-            <p class="eyebrow">EXE Licensing</p>
-            <h1>Users</h1>
-            <p class="subhead">Every user — including Super Admin — belongs to an organisation and is locked to one device. Pick an existing organisation or create a new one inline.</p>
+            <p class="eyebrow">Super Admin</p>
+            <h1>Login &amp; system details</h1>
+            <p class="subhead">Fill one form to add organisation, license, device, and user — same idea as Autoballoon. Every user is locked to one approved PC.</p>
           </div>
         </div>
         <div class="admin-grid">
@@ -511,7 +692,7 @@
                 <div class="field"><label for="cu-license">License key (blank = auto AB-2026-XXXX)</label><input id="cu-license" placeholder="Leave blank to auto-generate"></div>
                 <label class="toggle-row"><input id="cu-require-device" type="checkbox" checked><span>Require device (EXE only on approved PC)</span></label>
               </div>
-              <p class="field-hint">A unique install password is generated automatically for this user and shown below after saving.</p>
+              <div class="field"><label for="cu-install">Install password <span class="hint">(blank = auto)</span></label><input id="cu-install" type="password" autocomplete="new-password" placeholder="Leave blank to auto-generate"></div>
               <div class="field"><label for="cu-name">Full name</label><input id="cu-name" required minlength="2"></div>
               <div class="field"><label for="cu-email">Email</label><input id="cu-email" type="email" required></div>
               <div class="field">
@@ -523,8 +704,8 @@
                   <option value="quality">Quality</option>
                 </select>
               </div>
-              <div class="field"><label for="cu-device">Device ID</label><input id="cu-device" placeholder="DEV-..." required></div>
-              <div class="field"><label for="cu-host">Host name</label><input id="cu-host" placeholder="DESKTOP-..." required></div>
+              <div class="field"><label for="cu-device">Device ID <span class="hint">(from customer Activate screen)</span></label><input id="cu-device" placeholder="DEV-..." required></div>
+              <div class="field"><label for="cu-host">Host name <span class="hint">(from customer Activate screen)</span></label><input id="cu-host" placeholder="DESKTOP-..." required></div>
               <div class="field"><label for="cu-temp-password">Temporary password</label><input id="cu-temp-password" type="password" required minlength="6"></div>
               <div id="customer-form-status" class="form-status" aria-live="polite"></div>
               <button type="submit">Create &amp; save</button>

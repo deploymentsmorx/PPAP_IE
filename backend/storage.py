@@ -1,9 +1,10 @@
-# S3 helpers for PPAP case file storage under s3://bucket/PPAP/{case_id}/...
+# S3 helpers for PPAP case file storage under s3://ppap-ie-prod/ppap/{case_id}/...
 
 from __future__ import annotations
 
 import logging
 import mimetypes
+import os
 from pathlib import Path
 
 import boto3
@@ -16,10 +17,13 @@ logger = logging.getLogger(__name__)
 
 def _client(app_settings: Settings | None = None):
     cfg = app_settings or settings
-    return boto3.client(
-        "s3",
-        region_name=cfg.aws_region,
-    )
+    kwargs = {"region_name": cfg.aws_region}
+    key = (os.getenv("AWS_ACCESS_KEY_ID") or "").strip()
+    secret = (os.getenv("AWS_SECRET_ACCESS_KEY") or "").strip()
+    if key and secret:
+        kwargs["aws_access_key_id"] = key
+        kwargs["aws_secret_access_key"] = secret
+    return boto3.client("s3", **kwargs)
 
 
 def s3_uri(key: str, app_settings: Settings | None = None) -> str:
@@ -78,7 +82,7 @@ def upload_directory(local_dir: Path, case_id: str, app_settings: Settings | Non
         if not path.is_file():
             continue
         rel = path.relative_to(root).as_posix()
-        # local_dir is often cases/{case_id}; keys should be PPAP/{case_id}/...
+        # local_dir is often cases/{case_id}; keys should be ppap/{case_id}/...
         if root.name == str(case_id):
             key = case_object_key(case_id, rel, cfg)
         else:

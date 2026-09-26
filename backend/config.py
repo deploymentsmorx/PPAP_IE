@@ -60,12 +60,12 @@ class Settings:
     @property
     def s3_bucket(self) -> str:
         load_project_env(self.project_root)
-        return (os.getenv("S3_BUCKET") or "ieppcostsheeterp").strip()
+        return (os.getenv("S3_BUCKET") or "ppap-ie-prod").strip()
 
     @property
     def s3_prefix(self) -> str:
         load_project_env(self.project_root)
-        prefix = (os.getenv("S3_PREFIX") or "PPAP/").strip()
+        prefix = (os.getenv("S3_PREFIX") or "ppap/").strip().replace(" ", "-")
         return prefix if prefix.endswith("/") else f"{prefix}/"
 
     @property
@@ -81,10 +81,8 @@ class Settings:
             return False
         if flag in {"1", "true", "yes", "on"}:
             return True
-        return bool(
-            (os.getenv("AWS_ACCESS_KEY_ID") or "").strip()
-            and (os.getenv("AWS_SECRET_ACCESS_KEY") or "").strip()
-        )
+        # On when bucket is set (IAM role / default credential chain OK without explicit keys)
+        return bool(self.s3_bucket)
 
     def case_dir(self, case_id: str) -> Path:
         return self.cases_dir / str(case_id)

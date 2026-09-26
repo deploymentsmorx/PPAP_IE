@@ -15,6 +15,8 @@ from .unit_builder import UnitBuilderMixin
 
 class ElementTagger(TextHelperMixin, PredictionRuleMixin, UnitBuilderMixin, PredictionPostProcessorMixin):
     ANTHROPIC_API_KEY_ENV_NAMES = (
+        "PPAP_OPENAI_API_KEY",
+        "OPENAI_API_KEY",
         "PPAP_TAGGING_ANTHROPIC_API_KEY",
         "PPAP_ANTHROPIC_API_KEY",
         "ANTHROPIC_API_KEY",
@@ -72,7 +74,14 @@ class ElementTagger(TextHelperMixin, PredictionRuleMixin, UnitBuilderMixin, Pred
         load_project_env()
         self.standard_id = normalize_standard_id(standard_id)
         elements_path, keywords_path = tagging_paths(self.standard_id)
-        self.llm_model = os.getenv("PPAP_TAGGING_ANTHROPIC_MODEL") or os.getenv("PPAP_ANTHROPIC_MODEL") or DEFAULT_ANTHROPIC_MODEL
+        self.llm_model = (
+            os.getenv("PPAP_TAGGING_OPENAI_MODEL")
+            or os.getenv("PPAP_OPENAI_MODEL")
+            or os.getenv("OPENAI_MODEL")
+            or os.getenv("PPAP_TAGGING_ANTHROPIC_MODEL")
+            or os.getenv("PPAP_ANTHROPIC_MODEL")
+            or DEFAULT_ANTHROPIC_MODEL
+        )
         self.llm_api_key = self._anthropic_api_key()
         self.llm_enabled = self._tagging_fallback_enabled()
         llm_url = os.getenv("PPAP_TAGGING_ANTHROPIC_URL") or os.getenv("PPAP_ANTHROPIC_URL")
